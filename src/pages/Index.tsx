@@ -17,6 +17,7 @@ import { AddGameDialog } from "@/components/AddGameDialog";
 import { GameDetailsDialog } from "@/components/GameDetailsDialog";
 import { GameCard } from "@/components/GameCard";
 import { BottomNav } from "@/components/BottomNav";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,9 @@ const Index = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Todos");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Premium skeleton loading - track actual count
+  const [skeletonCount, setSkeletonCount] = useState(6); // fallback
+
   // Details Modal State
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -86,6 +90,13 @@ const Index = () => {
 
     return matchesSearch && matchesPlatform && matchesStatus;
   });
+
+  // Update skeleton count when games load (premium: exact count)
+  useEffect(() => {
+    if (!isLoading && loadedGames.length > 0) {
+      setSkeletonCount(filteredGames.length || loadedGames.length);
+    }
+  }, [isLoading, loadedGames.length, filteredGames.length]);
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -279,8 +290,18 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6 mb-16 md:mb-0">
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="flex flex-col gap-2 animate-in fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+            {[...Array(skeletonCount)].map((_, i) => (
+              <motion.div
+                key={`skeleton-${i}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: i * 0.15, // Slower stagger for premium feel
+                  duration: 0.5,
+                  ease: "easeOut"
+                }}
+                className="flex flex-col gap-2"
+              >
                 {/* Game Cover Skeleton */}
                 <div className="aspect-[2/3] rounded-lg skeleton-shimmer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
@@ -289,19 +310,37 @@ const Index = () => {
                 <div className="h-4 w-3/4 rounded skeleton-shimmer" />
                 {/* Platform/Status Skeleton */}
                 <div className="h-3 w-1/2 rounded skeleton-shimmer" />
-              </div>
+              </motion.div>
             ))}
           </div>
         ) : filteredGames.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {filteredGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onClick={() => openDetails(game)}
-              />
-            ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              layout
+              className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              {filteredGames.map((game, index) => (
+                <motion.div
+                  key={game.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{
+                    delay: index * 0.08, // Faster for cards appearing
+                    duration: 0.4,
+                    ease: [0.4, 0, 0.2, 1] // Custom ease for smooth feel
+                  }}
+                >
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    onClick={() => openDetails(game)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-default-400">
