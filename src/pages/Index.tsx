@@ -280,10 +280,15 @@ const Index = () => {
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="flex flex-col gap-2">
-                <Skeleton className="aspect-[2/3] rounded-lg" />
-                <Skeleton className="h-4 w-3/4 rounded-lg" />
-                <Skeleton className="h-3 w-1/2 rounded-lg" />
+              <div key={i} className="flex flex-col gap-2 animate-in fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                {/* Game Cover Skeleton */}
+                <div className="aspect-[2/3] rounded-lg skeleton-shimmer relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                </div>
+                {/* Title Skeleton */}
+                <div className="h-4 w-3/4 rounded skeleton-shimmer" />
+                {/* Platform/Status Skeleton */}
+                <div className="h-3 w-1/2 rounded skeleton-shimmer" />
               </div>
             ))}
           </div>
