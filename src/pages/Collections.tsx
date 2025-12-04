@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
 import { Plus, FolderOpen, Trash2, Edit, Search, Grid3x3, List, SortAsc, SortDesc, Gamepad2 } from "lucide-react";
@@ -186,18 +187,18 @@ const Collections = () => {
                         <div className="flex items-center gap-4">
                             {/* Desktop Navigation */}
                             <nav className="hidden md:flex items-center gap-1">
-                                <a
-                                    href="/"
+                                <Link
+                                    to="/"
                                     className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                                 >
                                     Biblioteca
-                                </a>
-                                <a
-                                    href="/collections"
+                                </Link>
+                                <Link
+                                    to="/collections"
                                     className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-primary"
                                 >
                                     Collections
-                                </a>
+                                </Link>
                             </nav>
 
                             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
