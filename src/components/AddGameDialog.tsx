@@ -20,9 +20,10 @@ type EnrichedGame = RawgGame & {
 
 type AddGameDialogProps = {
     onAddGame: (game: any) => void;
+    trigger?: React.ReactNode;
 };
 
-export function AddGameDialog({ onAddGame }: AddGameDialogProps) {
+export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -94,10 +95,14 @@ export function AddGameDialog({ onAddGame }: AddGameDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="rounded-full text-xs font-semibold gap-2">
-                    <Plus className="h-3.5 w-3.5" />
-                    Adicionar jogo
-                </Button>
+                {trigger ? (
+                    trigger
+                ) : (
+                    <Button size="sm" className="rounded-full text-xs font-semibold gap-2">
+                        <Plus className="h-3.5 w-3.5" />
+                        Adicionar jogo
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background border-border">
                 <DialogHeader className="p-6 pb-2">

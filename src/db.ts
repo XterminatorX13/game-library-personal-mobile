@@ -16,13 +16,37 @@ export interface Game {
   addedAt: number;
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  gameIds: string[];
+  createdAt: number;
+  // Future: Auto-collections support
+  isAuto?: boolean;
+  autoRules?: {
+    platform?: string[];
+    status?: string[];
+    tags?: string[];
+    minRating?: number;
+    store?: string[];
+  };
+}
+
 export class GameVaultDB extends Dexie {
   games!: Table<Game>;
+  collections!: Table<Collection>;
 
   constructor() {
     super('GameVaultDB');
+    // Version 1: Original schema with only games
     this.version(1).stores({
-      games: 'id, title, platform, status, addedAt' // Indexed fields for fast searching/filtering
+      games: 'id, title, platform, status, addedAt'
+    });
+    // Version 2: Added collections table
+    this.version(2).stores({
+      games: 'id, title, platform, status, addedAt',
+      collections: 'id, name, createdAt, isAuto'
     });
   }
 }

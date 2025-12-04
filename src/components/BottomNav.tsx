@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Home, Search, Plus, FolderHeart, User } from "lucide-react";
 import { AddGameDialog } from "@/components/AddGameDialog";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 // Temporarily all point to / until we create those pages
@@ -20,7 +22,7 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-md md:hidden">
             {/* Safe area for iOS */}
             <div className="pb-safe">
-                <div className="flex items-center justify-around h-14">
+                <div className="grid grid-cols-5 h-14 items-center">
                     {NAV_ITEMS.map((item, index) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -28,24 +30,42 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
 
                         if (isCenter) {
                             return (
-                                <div key={index} className="relative -top-3">
-                                    <AddGameDialog onAddGame={onAddGame} />
+                                <div key={index} className="relative w-full h-full flex items-center justify-center">
+                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                                        <AddGameDialog
+                                            onAddGame={onAddGame}
+                                            trigger={
+                                                <Button
+                                                    size="icon"
+                                                    className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all border-4 border-background active:scale-95"
+                                                >
+                                                    <Plus className="h-7 w-7" />
+                                                </Button>
+                                            }
+                                        />
+                                    </div>
                                 </div>
                             );
                         }
 
                         return (
-                            <Link
+                            <motion.div
                                 key={item.path + index}
-                                to={item.path}
-                                className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 transition-colors ${isActive
+                                className="w-full h-full flex items-center justify-center"
+                                whileTap={{ scale: 0.9 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                                <Link
+                                    to={item.path}
+                                    className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors ${isActive
                                         ? "text-primary"
                                         : "text-muted-foreground"
-                                    }`}
-                            >
-                                <Icon className="h-5 w-5" />
-                                <span className="text-[10px] font-medium">{item.label}</span>
-                            </Link>
+                                        }`}
+                                >
+                                    <Icon className="h-5 w-5" />
+                                    <span className="text-[10px] font-medium">{item.label}</span>
+                                </Link>
+                            </motion.div>
                         );
                     })}
                 </div>

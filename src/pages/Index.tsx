@@ -95,8 +95,23 @@ const Index = () => {
             Game<span className="text-primary">Vault</span>
           </h1>
 
-          {/* Desktop Only - Add Game Button */}
-          <div className="hidden md:block">
+          {/* Desktop Navigation & Add Game Button */}
+          <div className="hidden md:flex items-center gap-4">
+            <nav className="flex items-center gap-1">
+              <a
+                href="/"
+                className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-primary"
+              >
+                Biblioteca
+              </a>
+              <a
+                href="/collections"
+                className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+              >
+                Collections
+              </a>
+            </nav>
+
             <TooltipProvider>
               <Tooltip delayDuration={500}>
                 <TooltipTrigger asChild>
@@ -239,70 +254,70 @@ const Index = () => {
             </Tabs>
           </div>
         </div>
+      </div>
 
-        {/* Stats - Secondary Info */}
-        <div className="border-b border-border bg-muted/20">
-          <div className="container mx-auto px-4 py-2">
-            <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide text-xs">
-              <div className="flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
-                <span>🕐</span>
-                <span>{loadedGames.reduce((acc, curr) => acc + curr.hoursPlayed, 0)}h jogadas</span>
-              </div>
-              {platformFilter !== "Todos" && (
-                <div className="flex items-center gap-1.5 whitespace-nowrap text-primary">
-                  <span>🎮</span>
-                  <span>{platformFilter}</span>
-                </div>
-              )}
+      {/* Stats - Secondary Info */}
+      <div className="border-b border-border bg-muted/20">
+        <div className="container mx-auto px-4 py-2">
+          <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide text-xs">
+            <div className="flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
+              <span>🕐</span>
+              <span>{loadedGames.reduce((acc, curr) => acc + curr.hoursPlayed, 0)}h jogadas</span>
             </div>
+            {platformFilter !== "Todos" && (
+              <div className="flex items-center gap-1.5 whitespace-nowrap text-primary">
+                <span>🎮</span>
+                <span>{platformFilter}</span>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Game Grid - Mobile First */}
-        <main className="container mx-auto px-4 py-6">
-          {isLoading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {[...Array(12)].map((_, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <Skeleton className="aspect-[2/3] rounded-lg" />
-                  <Skeleton className="h-4 w-3/4 rounded-lg" />
-                  <Skeleton className="h-3 w-1/2 rounded-lg" />
-                </div>
-              ))}
-            </div>
-          ) : filteredGames.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {filteredGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  onClick={() => openDetails(game)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="text-default-400">
-                <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                <p className="text-base font-medium">Nenhum jogo encontrado</p>
-                <p className="text-sm mt-2">Tente ajustar os filtros ou adicionar novos jogos</p>
-              </div>
-            </div>
-          )}
-        </main>
-
-        {/* Mobile Bottom Navigation */}
-        <BottomNav onAddGame={handleAddGame} />
-
-        {/* Game Details Modal */}
-        <GameDetailsDialog
-          game={selectedGame}
-          open={isDetailsOpen}
-          onOpenChange={setIsDetailsOpen}
-          onUpdateGame={handleUpdateGame}
-          onDeleteGame={handleDeleteGame}
-        />
       </div>
+
+      {/* Game Grid - Mobile First */}
+      <main className="container mx-auto px-4 py-6 mb-16 md:mb-0">
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton className="aspect-[2/3] rounded-lg" />
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+                <Skeleton className="h-3 w-1/2 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : filteredGames.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {filteredGames.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                onClick={() => openDetails(game)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-default-400">
+              <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
+              <p className="text-base font-medium">Nenhum jogo encontrado</p>
+              <p className="text-sm mt-2">Tente ajustar os filtros ou adicionar novos jogos</p>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav onAddGame={handleAddGame} />
+
+      {/* Game Details Modal */}
+      <GameDetailsDialog
+        game={selectedGame}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        onUpdateGame={handleUpdateGame}
+        onDeleteGame={handleDeleteGame}
+      />
     </div>
   );
 };

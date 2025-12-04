@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,39 +27,45 @@ const STATUS_COLORS: Record<GameStatus, string> = {
 
 export function GameCard({ game, onClick }: GameCardProps) {
     return (
-        <Card
-            onClick={onClick}
-            className="group relative border-none bg-card/50 backdrop-blur-sm transition-all duration-200 hover:scale-[0.97] hover:shadow-xl cursor-pointer overflow-hidden"
+        <motion.div
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-            <CardContent className="p-0 relative aspect-[2/3]">
-                <img
-                    alt={game.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    src={game.cover}
-                    loading="lazy"
-                />
+            <Card
+                onClick={onClick}
+                className="group relative border-none bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-xl cursor-pointer overflow-hidden"
+            >
+                <CardContent className="p-0 relative aspect-[2/3]">
+                    <img
+                        alt={game.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={game.cover}
+                        loading="lazy"
+                    />
 
-                {/* Status Indicator - Top Right */}
-                <div className="absolute right-2 top-2 z-10">
-                    <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[game.status]} ring-2 ring-background shadow-md`} />
-                </div>
-            </CardContent>
+                    {/* Status Indicator - Top Right */}
+                    <div className="absolute right-2 top-2 z-10">
+                        <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[game.status]} ring-2 ring-background shadow-md`} />
+                    </div>
+                </CardContent>
 
-            <CardFooter className="px-3 py-2 flex-col items-start gap-1 bg-background/40 backdrop-blur-sm absolute bottom-0 w-full">
-                <h3 className="text-sm font-medium leading-tight text-foreground line-clamp-1 w-full">
-                    {game.title}
-                </h3>
-                <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
-                    <Badge variant="secondary" className="text-[10px] px-1.5 h-5 font-normal uppercase tracking-wider bg-background/80 backdrop-blur-md">
-                        {game.platform}
-                    </Badge>
-                    {game.rating && game.rating > 0 && (
-                        <span className="flex items-center gap-0.5 text-yellow-500 font-medium">
-                            ★ {game.rating}
-                        </span>
-                    )}
-                </div>
-            </CardFooter>
-        </Card>
+                <CardFooter className="px-3 py-2 flex-col items-start gap-1 bg-background/40 backdrop-blur-sm absolute bottom-0 w-full">
+                    <h3 className="text-sm font-medium leading-tight text-foreground line-clamp-1 w-full">
+                        {game.title}
+                    </h3>
+                    <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
+                        <Badge variant="secondary" className="text-[10px] px-1.5 h-5 font-normal uppercase tracking-wider bg-background/80 backdrop-blur-md">
+                            {game.platform}
+                        </Badge>
+                        {game.rating && game.rating > 0 && (
+                            <span className="flex items-center gap-0.5 text-yellow-500 font-medium">
+                                ★ {game.rating}
+                            </span>
+                        )}
+                    </div>
+                </CardFooter>
+            </Card>
+        </motion.div>
     );
 }
