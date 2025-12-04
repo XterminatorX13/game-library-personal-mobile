@@ -49,12 +49,12 @@ export function GameCard({ game, onClick }: GameCardProps) {
                     />
 
                     {/* Status Indicator - Top Right */}
-                    <div className="absolute right-2 top-2 z-10">
+                    <div className="absolute right-2 top-2 z-20">
                         <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[game.status]} ring-2 ring-background shadow-md`} />
                     </div>
                 </CardContent>
 
-                <CardFooter className="px-3 py-2 flex-col items-start gap-1 bg-background/40 backdrop-blur-sm absolute bottom-0 w-full">
+                <CardFooter className="px-3 py-2 flex-col items-start gap-1 bg-background/40 backdrop-blur-sm absolute bottom-0 w-full z-20">
                     <h3 className="text-sm font-medium leading-tight text-foreground line-clamp-1 w-full">
                         {game.title}
                     </h3>
