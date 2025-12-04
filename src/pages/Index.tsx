@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Game } from "@/db";
 import { Search, SlidersHorizontal } from "lucide-react";
@@ -98,18 +99,18 @@ const Index = () => {
           {/* Desktop Navigation & Add Game Button */}
           <div className="hidden md:flex items-center gap-4">
             <nav className="flex items-center gap-1">
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-primary"
               >
                 Biblioteca
-              </a>
-              <a
-                href="/collections"
+              </Link>
+              <Link
+                to="/collections"
                 className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground text-muted-foreground"
               >
                 Collections
-              </a>
+              </Link>
             </nav>
 
             <TooltipProvider>
