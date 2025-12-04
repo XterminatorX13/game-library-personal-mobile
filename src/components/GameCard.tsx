@@ -37,11 +37,15 @@ export function GameCard({ game, onClick }: GameCardProps) {
                 className="group relative border-none bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-xl cursor-pointer overflow-hidden"
             >
                 <CardContent className="p-0 relative aspect-[2/3]">
+                    {/* Blur placeholder while image loads */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 skeleton-shimmer" />
+
                     <img
                         alt={game.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 relative z-10"
                         src={game.cover}
                         loading="lazy"
+                        decoding="async"
                     />
 
                     {/* Status Indicator - Top Right */}

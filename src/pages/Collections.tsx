@@ -355,6 +355,8 @@ const Collections = () => {
                                                                 src={cover}
                                                                 className="w-full h-full object-cover blur-sm"
                                                                 alt=""
+                                                                loading="lazy"
+                                                                decoding="async"
                                                             />
                                                         ))}
                                                     </div>
@@ -393,6 +395,8 @@ const Collections = () => {
                                                                     src={cover}
                                                                     className="w-full h-full object-cover"
                                                                     alt=""
+                                                                    loading="lazy"
+                                                                    decoding="async"
                                                                 />
                                                             </div>
                                                         ))}
