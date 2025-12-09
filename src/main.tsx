@@ -6,9 +6,6 @@ import "./index.css";
 // PWA Registration
 import { registerSW } from 'virtual:pwa-register';
 
-// One-time cache cleanup (removes bloated old caches)
-import './lib/cacheCleanup';
-
 const updateSW = registerSW({
     onNeedRefresh() { },
     onOfflineReady() { },
