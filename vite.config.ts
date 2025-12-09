@@ -46,25 +46,16 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Smart caching: Only cache HIGH-RES covers of games in library
-        // Excludes: blur placeholders, search thumbnails
+        // Cache only HIGH-RES covers (weserv.nl with w=400)
+        // Blur placeholders have w=40 and won't match this pattern
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => {
-              // Only cache images.weserv.nl
-              if (!url.hostname.includes('weserv.nl')) return false;
-
-              // Exclude blur placeholders (blur=10 or w=40)
-              const params = url.searchParams;
-              if (params.has('blur') || params.get('w') === '40') return false;
-
-              return true;
-            },
+            urlPattern: /^https:\/\/images\.weserv\.nl\/.*[?&]w=400.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'library-covers',
               expiration: {
-                maxEntries: 30, // Last 30 viewed games (~6MB)
+                maxEntries: 30, // Last 30 viewed games (~4.5MB)
                 maxAgeSeconds: 60 * 60 * 24 * 14 // 2 weeks
               },
               cacheableResponse: {
