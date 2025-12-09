@@ -70,7 +70,9 @@ export const SteamGridService = {
             const data = await response.json();
 
             // Return the first (usually best/most popular) grid
-            return data.data?.[0]?.url || null;
+            // Prefer 'thumb' for better performance (smaller size), fallback to 'url'
+            const grid = data.data?.[0];
+            return grid?.thumb || grid?.url || null;
         } catch (error) {
             console.error("Error fetching SteamGridDB grids:", error);
             return null;

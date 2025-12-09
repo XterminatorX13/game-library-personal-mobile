@@ -315,21 +315,19 @@ const Index = () => {
           </div>
         ) : filteredGames.length > 0 ? (
           <AnimatePresence mode="popLayout">
-            <motion.div
-              layout
+            <div
               className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               {filteredGames.map((game, index) => (
                 <motion.div
                   key={game.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
                   transition={{
-                    delay: index * 0.08, // Faster for cards appearing
-                    duration: 0.4,
-                    ease: [0.4, 0, 0.2, 1] // Custom ease for smooth feel
+                    delay: Math.min(index * 0.05, 0.3), // Cap delay for better UX
+                    duration: 0.3,
+                    ease: "easeOut"
                   }}
                 >
                   <GameCard
@@ -339,7 +337,7 @@ const Index = () => {
                   />
                 </motion.div>
               ))}
-            </motion.div>
+            </div>
           </AnimatePresence>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
