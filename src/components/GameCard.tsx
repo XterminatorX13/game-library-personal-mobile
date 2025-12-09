@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getCachedOptimizedImage } from "@/lib/imageOptimizer";
+import { getCachedOptimizedImage, getBlurPlaceholder } from "@/lib/imageOptimizer";
 
 type GameStatus = "backlog" | "playing" | "finished" | "dropped";
 
@@ -28,6 +28,7 @@ const STATUS_COLORS: Record<GameStatus, string> = {
 export function GameCard({ game, onClick }: GameCardProps) {
     // Optimize image URL for low-end devices
     const optimizedCover = getCachedOptimizedImage(game.cover);
+    const blurPlaceholder = getBlurPlaceholder(game.cover);
 
     return (
         <div className="transform transition-all duration-200 hover:scale-[1.02] active:scale-95">
@@ -36,8 +37,13 @@ export function GameCard({ game, onClick }: GameCardProps) {
                 className="group relative border-none bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-xl cursor-pointer overflow-hidden"
             >
                 <CardContent className="p-0 relative aspect-[2/3]">
-                    {/* Blur placeholder while image loads */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 skeleton-shimmer" />
+                    {/* Ultra-compressed blur placeholder (40px, 20% quality) */}
+                    <img
+                        src={blurPlaceholder}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover blur-xl scale-110"
+                        aria-hidden="true"
+                    />
 
                     <img
                         alt={game.title}
