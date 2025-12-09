@@ -1,18 +1,25 @@
-// Image optimization utility using Cloudinary proxy for WebP/AVIF conversion
+// Image optimization using images.weserv.nl (Open Source, Free, Unlimited)
+// Docs: https://images.weserv.nl/docs/
 export function optimizeImageUrl(originalUrl: string, options: {
     width?: number;
     quality?: number;
-    format?: 'webp' | 'avif' | 'auto';
+    output?: 'webp' | 'avif' | 'auto';
 } = {}): string {
     if (!originalUrl) return originalUrl;
 
-    const { width = 300, quality = 60, format = 'auto' } = options;
+    const { width = 300, quality = 60, output = 'webp' } = options;
 
-    // Use Cloudinary's free fetch API to optimize external images
-    const cloudinaryBase = 'https://res.cloudinary.com/demo/image/fetch';
-    const transformations = `f_${format},q_${quality},w_${width},c_limit`;
+    // Use images.weserv.nl - Free OSS image optimization service
+    const params = new URLSearchParams({
+        url: originalUrl,
+        w: width.toString(),
+        q: quality.toString(),
+        output: output,
+        il: '', // Interlace/progressive loading
+        af: '', // Auto-filter (sharpen)
+    });
 
-    return `${cloudinaryBase}/${transformations}/${encodeURIComponent(originalUrl)}`;
+    return `https://images.weserv.nl/?${params.toString()}`;
 }
 
 // Aggressive caching for game covers
@@ -24,9 +31,9 @@ export function getCachedOptimizedImage(url: string): string {
     }
 
     const optimized = optimizeImageUrl(url, {
-        width: 280, // Smaller for mobile
-        quality: 55, // More aggressive compression
-        format: 'auto' // Let Cloudinary choose best format
+        width: 280,
+        quality: 55,
+        output: 'webp'
     });
 
     imageCache.set(url, optimized);
