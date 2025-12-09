@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Plus, Loader2, Gamepad2 } from "lucide-react";
 import { RawgService, RawgGame } from "@/services/rawg-service";
 import { SteamGridService } from "@/services/steamgrid-service";
+import { optimizeImageUrl } from "@/lib/imageOptimizer";
 
 type EnrichedGame = RawgGame & {
     highQualityCover?: string;
@@ -73,6 +74,19 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     };
 
     const handleAdd = (game: EnrichedGame) => {
+        // CRITICAL: Optimize cover URL BEFORE saving to database
+        // This prevents caching 8MB raw PNGs from SteamGridDB
+        const rawCoverUrl = game.highQualityCover || game.background_image || "https://via.placeholder.com/400x600/1a1f29/6366f1?text=No+Cover";
+
+        // Force optimization via weserv.nl (saves bandwidth + storage)
+        const optimizedCover = rawCoverUrl.includes('placeholder')
+            ? rawCoverUrl
+            : optimizeImageUrl(rawCoverUrl, {
+                width: 400,
+                quality: 75, // Balanced quality (was 100)
+                output: 'webp'
+            });
+
         const newGame = {
             id: game.id.toString(),
             title: game.name,
@@ -80,7 +94,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             store: "manual",
             status: "backlog",
             hoursPlayed: 0,
-            cover: game.highQualityCover || game.background_image || "https://via.placeholder.com/400x600/1a1f29/6366f1?text=No+Cover",
+            cover: optimizedCover, // ✅ Pre-optimized URL
             tags: game.genres?.map(g => g.name).slice(0, 3) || [],
             rating: game.rating || 0,
             releaseYear: game.released?.split("-")[0] || undefined,
