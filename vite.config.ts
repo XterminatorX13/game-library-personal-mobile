@@ -46,9 +46,24 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // NO image caching - all images loaded fresh from network
-        // User requested minimal cache footprint
-        runtimeCaching: []
+        // Smart caching: Only cache covers of games ALREADY in library
+        // Search thumbnails (RAWG/SteamGrid) are NOT cached
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/images\.weserv\.nl\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'library-covers',
+              expiration: {
+                maxEntries: 30, // Last 30 viewed games (~6MB)
+                maxAgeSeconds: 60 * 60 * 24 * 14 // 2 weeks
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       }
     })
   ].filter(Boolean),
