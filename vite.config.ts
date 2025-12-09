@@ -3,13 +3,96 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+import { VitePWA } from 'vite-plugin-pwa';
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'GameVault Library',
+        short_name: 'GameVault',
+        description: 'Personal Game Library Manager',
+        theme_color: '#09090b',
+        background_color: '#09090b',
+        display: 'standalone',
+        orientation: 'portrait',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/images\.igdb\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'igdb-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/media\.rawg\.io\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'rawg-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/cdn\.steamgriddb\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'steamgrid-images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
+      }
+    })
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
