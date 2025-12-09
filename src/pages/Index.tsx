@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGameDialog } from "@/components/AddGameDialog";
 import { GameDetailsDialog } from "@/components/GameDetailsDialog";
 import { GameCard } from "@/components/GameCard";
+import { VirtualGameGrid } from "@/components/VirtualGameGrid";
 import { BottomNav } from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -286,59 +287,15 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Game Grid - Mobile First */}
-      <main className="container mx-auto px-4 py-6 mb-16 md:mb-0">
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {[...Array(skeletonCount)].map((_, i) => (
-              <motion.div
-                key={`skeleton-${i}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: i * 0.15, // Slower stagger for premium feel
-                  duration: 0.5,
-                  ease: "easeOut"
-                }}
-                className="flex flex-col gap-2"
-              >
-                {/* Game Cover Skeleton */}
-                <div className="aspect-[2/3] rounded-lg skeleton-shimmer relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                </div>
-                {/* Title Skeleton */}
-                <div className="h-4 w-3/4 rounded skeleton-shimmer" />
-                {/* Platform/Status Skeleton */}
-                <div className="h-3 w-1/2 rounded skeleton-shimmer" />
-              </motion.div>
-            ))}
-          </div>
-        ) : filteredGames.length > 0 ? (
-          <AnimatePresence mode="popLayout">
-            <div
-              className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-            >
-              {filteredGames.map((game, index) => (
-                <motion.div
-                  key={game.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{
-                    delay: Math.min(index * 0.05, 0.3), // Cap delay for better UX
-                    duration: 0.3,
-                    ease: "easeOut"
-                  }}
-                >
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    onClick={() => openDetails(game)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </AnimatePresence>
+      {/* Game Grid - Mobile First - VIRTUALIZED */}
+      <main className="container mx-auto px-4 py-6 md:mb-0">
+        {isLoading || filteredGames.length > 0 ? (
+          <VirtualGameGrid
+            games={filteredGames}
+            isLoading={isLoading}
+            skeletonCount={skeletonCount}
+            onGameClick={openDetails}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-default-400">
