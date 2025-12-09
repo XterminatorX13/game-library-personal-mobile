@@ -65,9 +65,20 @@ export function VirtualGameGrid({ games, onGameClick, isLoading, skeletonCount }
         return null; // Parent handles empty state
     }
 
-    // Ultra-optimized item rendering - NO animations for performance
+    // Ultra-optimized item rendering with lightweight CSS animations
     const ItemContent = React.memo(({ index, game }: { index: number; game: Game }) => {
-        return <GameCard game={game} onClick={() => onGameClick(game)} />;
+        return (
+            <div
+                className="animate-in fade-in slide-in-from-bottom-4"
+                style={{
+                    animationDelay: `${Math.min(index * 30, 300)}ms`,
+                    animationDuration: '400ms',
+                    animationFillMode: 'both'
+                }}
+            >
+                <GameCard game={game} onClick={() => onGameClick(game)} />
+            </div>
+        );
     }, (prev, next) => prev.game.id === next.game.id);
 
     return (
