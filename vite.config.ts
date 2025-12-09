@@ -47,42 +47,45 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
+          // Priority 1: Optimized images via weserv.nl (our CDN proxy)
           {
-            urlPattern: /^https:\/\/images\.igdb\.com\/.*/i,
+            urlPattern: /^https:\/\/images\.weserv\.nl\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'igdb-images',
+              cacheName: 'weserv-optimized-images',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 50, // Reduced: 50 games × ~200KB each = ~10MB
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90 days (longer since optimized)
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
           },
-          {
-            urlPattern: /^https:\/\/media\.rawg\.io\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'rawg-images',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
+          // Priority 2: SteamGridDB (original covers - only cache small thumbs)
           {
             urlPattern: /^https:\/\/cdn\.steamgriddb\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst', // Prefer network to avoid stale data
             options: {
               cacheName: 'steamgrid-images',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxEntries: 20, // Reduced from 100
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days (short cache)
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Priority 3: RAWG (metadata images - low priority)
+          {
+            urlPattern: /^https:\/\/media\.rawg\.io\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'rawg-images',
+              expiration: {
+                maxEntries: 10, // Reduced from 100
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200]

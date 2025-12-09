@@ -1,10 +1,19 @@
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { setupPWA } from "./setupPWA";
 
-setupPWA();
+// PWA Registration
+import { registerSW } from 'virtual:pwa-register';
 
-createRoot(document.getElementById("root")!).render(
+// One-time cache cleanup (removes bloated old caches)
+import './lib/cacheCleanup';
+
+const updateSW = registerSW({
+    onNeedRefresh() { },
+    onOfflineReady() { },
+});
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
 );
