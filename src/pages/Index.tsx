@@ -18,6 +18,7 @@ import { GameDetailsDialog } from "@/components/GameDetailsDialog";
 import { GameCard } from "@/components/GameCard";
 import { VirtualGameGrid } from "@/components/VirtualGameGrid";
 import { FilterBottomSheet } from "@/components/FilterBottomSheet";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { BottomNav } from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -309,24 +310,29 @@ const Index = () => {
       </div>
 
       {/* Game Grid - Mobile First - VIRTUALIZED */}
-      <main className="container mx-auto px-4 py-6 md:mb-0">
-        {isLoading || filteredGames.length > 0 ? (
-          <VirtualGameGrid
-            games={filteredGames}
-            isLoading={isLoading}
-            skeletonCount={skeletonCount}
-            onGameClick={openDetails}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="text-default-400">
-              <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
-              <p className="text-base font-medium">Nenhum jogo encontrado</p>
-              <p className="text-sm mt-2">Tente ajustar os filtros ou adicionar novos jogos</p>
+      <PullToRefresh onRefresh={async () => {
+        // Reload games from database
+        await db.games.toArray();
+      }}>
+        <main className="container mx-auto px-4 py-6 md:mb-0">
+          {isLoading || filteredGames.length > 0 ? (
+            <VirtualGameGrid
+              games={filteredGames}
+              isLoading={isLoading}
+              skeletonCount={skeletonCount}
+              onGameClick={openDetails}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="text-default-400">
+                <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                <p className="text-base font-medium">Nenhum jogo encontrado</p>
+                <p className="text-sm mt-2">Tente ajustar os filtros ou adicionar novos jogos</p>
+              </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </PullToRefresh>
 
       {/* Mobile Bottom Navigation */}
       <BottomNav onAddGame={handleAddGame} />
