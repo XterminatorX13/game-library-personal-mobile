@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Game } from "@/db";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutGrid, List, StretchHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 type Platform = string;
 type StatusFilter = "Todos" | "Backlog" | "Jogando" | "Zerado" | "Dropado";
 type GameStatus = Game['status']; // Extract from imported Game type
+type ViewMode = "grid" | "list" | "gallery";
 
 
 const statusLabelMap: Record<GameStatus, StatusFilter> = {
@@ -57,6 +58,19 @@ const Index = () => {
   const [sortOrder, setSortOrder] = useState<"newest" | "name" | "rating">("newest");
   const [showFilters, setShowFilters] = useState(false);
 
+  // View Mode State with Persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    // Safe access for SSR/hydration if needed, though this is SPA
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem("game-library-view-mode") as ViewMode) || "grid";
+    }
+    return "grid";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("game-library-view-mode", viewMode);
+  }, [viewMode]);
+
   // Premium skeleton loading - track actual count
   const [skeletonCount, setSkeletonCount] = useState(6); // fallback
 
@@ -76,7 +90,29 @@ const Index = () => {
   };
 
   const handleDeleteGame = async (gameId: string) => {
-    await db.games.delete(gameId);
+    try {
+      // 1. Delete the game itself
+      await db.games.delete(gameId);
+
+      // 2. Cascade delete: Remove this game ID from all collections
+      const collections = await db.collections.toArray();
+      const collectionsUpdates = collections
+        .filter(c => c.gameIds.includes(gameId))
+        .map(c => ({
+          key: c.id,
+          changes: {
+            gameIds: c.gameIds.filter(id => id !== gameId)
+          }
+        }));
+
+      if (collectionsUpdates.length > 0) {
+        await Promise.all(collectionsUpdates.map(u => db.collections.update(u.key, u.changes)));
+      }
+
+    } catch (error) {
+      console.error("Failed to delete game:", error);
+      // Toast is handled in the dialog, but we could log here
+    }
   };
 
   const openDetails = (game: Game) => {
@@ -174,8 +210,40 @@ const Index = () => {
               />
             </div>
 
-            {/* Desktop Filter Toggle */}
-            <div className="hidden md:block">
+            {/* Desktop Filter Toggle & View Switcher */}
+            <div className="hidden md:flex items-center gap-2">
+              <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border">
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setViewMode("list")}
+                  title="List View"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setViewMode("grid")}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "gallery" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setViewMode("gallery")}
+                  title="Gallery View"
+                >
+                  <StretchHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="w-px h-6 bg-border mx-1" />
+
               <Button variant="ghost" size="icon" onClick={() => setShowFilters(!showFilters)}>
                 <SlidersHorizontal className={`h-4 w-4 ${showFilters ? "text-primary" : "text-muted-foreground"}`} />
               </Button>
@@ -321,6 +389,7 @@ const Index = () => {
               isLoading={isLoading}
               skeletonCount={skeletonCount}
               onGameClick={openDetails}
+              viewMode={viewMode}
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">

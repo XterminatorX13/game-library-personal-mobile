@@ -31,6 +31,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useTranslation, Language } from "@/lib/i18n";
+import { generateUUID } from "@/lib/uuid";
 
 type SortOption = "name" | "date" | "games";
 type ViewMode = "grid" | "list";
@@ -105,12 +106,12 @@ const Collections = () => {
 
         try {
             await db.collections.delete(deletingCollection.id);
-            toast.success(t('collections.successDeleted'));
+            toast.success(`Coleção "${deletingCollection.name}" deletada`);
             setIsDeleteOpen(false);
             setDeletingCollection(null);
         } catch (error) {
-            toast.error(t('collections.errorDelete'));
-            console.error(error);
+            console.error("Failed to delete collection:", error);
+            toast.error("Erro ao deletar coleção: " + (error as any).message);
         }
     };
 

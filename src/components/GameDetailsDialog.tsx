@@ -16,7 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Star, Clock, Calendar, Trash2, Save } from "lucide-react";
+import { Star, Clock, Calendar, Trash2, Save, FolderPlus, Check, Plus, Library } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/db";
+import { toast } from "sonner";
+import { generateUUID } from "@/lib/uuid";
 
 // Import types from Index.tsx (or define them here if not exported)
 // For now, I'll redefine/extend locally to avoid circular deps or complex refactors
@@ -52,6 +56,11 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
     const [rating, setRating] = useState(0);
     const [hoursPlayed, setHoursPlayed] = useState(0);
 
+    const collections = useLiveQuery(() => db.collections.toArray());
+    const [newCollectionName, setNewCollectionName] = useState("");
+    const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false); // Confirmation state for delete
+
     useEffect(() => {
         if (game) {
             setNotes(game.notes || "");
@@ -60,6 +69,55 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
             setHoursPlayed(game.hoursPlayed || 0);
         }
     }, [game]);
+
+    // Reset delete confirmation when dialog closes
+    useEffect(() => {
+        if (!open) {
+            setIsDeleting(false);
+        }
+    }, [open]);
+
+    const handleToggleCollection = async (collectionId: string, currentGameIds: string[]) => {
+        if (!game) return;
+
+        try {
+            const isInCollection = currentGameIds.includes(game.id);
+            let newGameIds;
+
+            if (isInCollection) {
+                newGameIds = currentGameIds.filter(id => id !== game.id);
+                toast.success("Removido da coleção");
+            } else {
+                newGameIds = [...currentGameIds, game.id];
+                toast.success("Adicionado à coleção");
+            }
+
+            await db.collections.update(collectionId, { gameIds: newGameIds });
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao atualizar coleção");
+        }
+    };
+
+    const handleCreateCollection = async () => {
+        if (!newCollectionName.trim() || !game) return;
+
+        try {
+            await db.collections.add({
+                id: generateUUID(),
+                name: newCollectionName.trim(),
+                gameIds: [game.id], // Add current game immediately
+                createdAt: Date.now()
+            });
+
+            setNewCollectionName("");
+            setIsCreatingCollection(false);
+            toast.success("Coleção criada e jogo adicionado!");
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao criar coleção");
+        }
+    };
 
     if (!game) return null;
 
@@ -173,23 +231,115 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                             className="min-h-[100px]"
                         />
                     </div>
+                    {/* Collections */}
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium leading-none flex items-center gap-2">
+                            <Library className="h-4 w-4 text-primary" />
+                            Coleções
+                        </label>
+
+                        <div className="flex flex-wrap gap-2">
+                            {collections?.map(collection => {
+                                const isIncluded = collection.gameIds.includes(game.id);
+                                return (
+                                    <Badge
+                                        key={collection.id}
+                                        variant={isIncluded ? "default" : "outline"}
+                                        className={`cursor-pointer transition-all hover:opacity-80 py-1.5 px-3 ${isIncluded ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"}`}
+                                        onClick={() => handleToggleCollection(collection.id, collection.gameIds)}
+                                    >
+                                        <div className="flex items-center gap-1.5">
+                                            {isIncluded ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                                            {collection.name}
+                                        </div>
+                                    </Badge>
+                                );
+                            })}
+
+                            {/* New Collection Toggle */}
+                            {!isCreatingCollection ? (
+                                <Badge
+                                    variant="outline"
+                                    className="cursor-pointer border-dashed border-muted-foreground/50 hover:bg-muted py-1.5 px-3 text-muted-foreground"
+                                    onClick={() => setIsCreatingCollection(true)}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <FolderPlus className="h-3 w-3" />
+                                        Nova...
+                                    </div>
+                                </Badge>
+                            ) : (
+                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                    <Input
+                                        value={newCollectionName}
+                                        onChange={(e) => setNewCollectionName(e.target.value)}
+                                        placeholder="Nome da coleção..."
+                                        className="h-7 w-32 text-xs"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleCreateCollection();
+                                            if (e.key === 'Escape') setIsCreatingCollection(false);
+                                        }}
+                                    />
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        onClick={handleCreateCollection}
+                                    >
+                                        <Check className="h-4 w-4 text-green-500" />
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7"
+                                        onClick={() => setIsCreatingCollection(false)}
+                                    >
+                                        <Plus className="h-4 w-4 rotate-45 text-muted-foreground" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                        {collections?.length === 0 && !isCreatingCollection && (
+                            <p className="text-xs text-muted-foreground italic">Nenhuma coleção criada.</p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="p-6 pt-2 flex justify-between items-center bg-muted/20 border-t border-border">
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                            if (confirm(`Deletar "${game.title}" permanentemente?`)) {
-                                onDeleteGame(game.id);
-                                onOpenChange(false);
-                            }
-                        }}
-                        className="gap-2"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Deletar
-                    </Button>
+                    {isDeleting ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-destructive font-medium">Tem certeza?</span>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                    onDeleteGame(game.id);
+                                    toast.success("Jogo deletado");
+                                    onOpenChange(false);
+                                }}
+                            >
+                                Sim, Deletar
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsDeleting(false)}
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setIsDeleting(true)}
+                            className="gap-2"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Deletar
+                        </Button>
+                    )}
                     <Button onClick={handleSave} className="gap-2">
                         <Save className="h-4 w-4" />
                         Salvar
