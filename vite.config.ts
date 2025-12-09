@@ -46,11 +46,20 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Smart caching: Only cache covers of games ALREADY in library
-        // Search thumbnails (RAWG/SteamGrid) are NOT cached
+        // Smart caching: Only cache HIGH-RES covers of games in library
+        // Excludes: blur placeholders, search thumbnails
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/images\.weserv\.nl\/.*/i,
+            urlPattern: ({ url }) => {
+              // Only cache images.weserv.nl
+              if (!url.hostname.includes('weserv.nl')) return false;
+
+              // Exclude blur placeholders (blur=10 or w=40)
+              const params = url.searchParams;
+              if (params.has('blur') || params.get('w') === '40') return false;
+
+              return true;
+            },
             handler: 'CacheFirst',
             options: {
               cacheName: 'library-covers',
