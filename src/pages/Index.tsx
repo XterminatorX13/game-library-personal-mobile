@@ -17,6 +17,7 @@ import { AddGameDialog } from "@/components/AddGameDialog";
 import { GameDetailsDialog } from "@/components/GameDetailsDialog";
 import { GameCard } from "@/components/GameCard";
 import { VirtualGameGrid } from "@/components/VirtualGameGrid";
+import { FilterBottomSheet } from "@/components/FilterBottomSheet";
 import { BottomNav } from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -52,6 +53,7 @@ const Index = () => {
   const [search, setSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<Platform>("Todos");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Todos");
+  const [sortOrder, setSortOrder] = useState<"newest" | "name" | "rating">("newest");
   const [showFilters, setShowFilters] = useState(false);
 
   // Premium skeleton loading - track actual count
@@ -90,6 +92,10 @@ const Index = () => {
     const matchesStatus = statusFilter === "Todos" ? true : statusLabelMap[game.status] === statusFilter;
 
     return matchesSearch && matchesPlatform && matchesStatus;
+  }).sort((a, b) => {
+    if (sortOrder === "newest") return b.addedAt - a.addedAt;
+    if (sortOrder === "rating") return (b.rating || 0) - (a.rating || 0);
+    return a.title.localeCompare(b.title);
   });
 
   // Update skeleton count when games load (premium: exact count)
@@ -152,12 +158,27 @@ const Index = () => {
                 placeholder="Buscar jogos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background/50 backdrop-blur-md border-border focus:bg-background/80 transition-all"
+                className="pl-9 bg-background/50 backdrop-blur-md border-border focus:bg-background/80 transition-all font-sans"
               />
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setShowFilters(!showFilters)}>
-              <SlidersHorizontal className={`h-4 w-4 ${showFilters ? "text-primary" : "text-muted-foreground"}`} />
-            </Button>
+
+            {/* Mobile Filter Bottom Sheet */}
+            <div className="md:hidden">
+              <FilterBottomSheet
+                platformFilter={platformFilter}
+                setPlatformFilter={setPlatformFilter}
+                platforms={platforms}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+              />
+            </div>
+
+            {/* Desktop Filter Toggle */}
+            <div className="hidden md:block">
+              <Button variant="ghost" size="icon" onClick={() => setShowFilters(!showFilters)}>
+                <SlidersHorizontal className={`h-4 w-4 ${showFilters ? "text-primary" : "text-muted-foreground"}`} />
+              </Button>
+            </div>
           </div>
 
           {/* Filters - Collapsible */}
