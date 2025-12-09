@@ -51,14 +51,14 @@ export function VirtualGameGrid({ games, onGameClick, isLoading, skeletonCount, 
     if (isLoading) {
         return (
             <div className={`grid gap-4 pb-24 ${viewMode === 'list' ? 'grid-cols-1' :
-                    viewMode === 'gallery' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
-                        'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                viewMode === 'gallery' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+                    'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                 }`}>
                 {skeletons.map((_, i) => (
                     <div key={`skeleton-${i}`} className="flex flex-col gap-2">
                         <div className={`rounded-lg skeleton-shimmer relative overflow-hidden ${viewMode === 'list' ? 'h-16 w-full' :
-                                viewMode === 'gallery' ? 'aspect-video' :
-                                    'aspect-[2/3]'
+                            viewMode === 'gallery' ? 'aspect-video' :
+                                'aspect-[2/3]'
                             }`}>
                             <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                         </div>

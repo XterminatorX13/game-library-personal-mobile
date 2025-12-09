@@ -1,6 +1,8 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GamePlaceholder } from "@/components/GamePlaceholder";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getCachedOptimizedImage, getBlurPlaceholder, optimizeImageUrl } from "@/lib/imageOptimizer";
 
 type GameStatus = "backlog" | "playing" | "finished" | "dropped";
@@ -14,11 +16,12 @@ type Game = {
     rating?: number;
 };
 
-type GameCardProps = {
+interface GameCardProps {
     game: Game;
     onClick?: () => void;
     priority?: boolean;
     variant?: "grid" | "list" | "gallery";
+    onQuickAdd?: () => void; // New prop for Quick Add
 };
 
 const STATUS_COLORS: Record<GameStatus, string> = {
@@ -28,7 +31,7 @@ const STATUS_COLORS: Record<GameStatus, string> = {
     dropped: "bg-destructive shadow-destructive/50",
 };
 
-export function GameCard({ game, onClick, priority = false, variant = "grid" }: GameCardProps) {
+export function GameCard({ game, onClick, priority = false, variant = "grid", onQuickAdd }: GameCardProps) {
     // Check if cover exists
     if (!game.cover) {
         // Placeholder/Empty state - Adjusted for list view
@@ -148,6 +151,23 @@ export function GameCard({ game, onClick, priority = false, variant = "grid" }: 
                     <div className="absolute right-2 top-2 z-20">
                         <div className={`h-3 w-3 rounded-full ${STATUS_COLORS[game.status]} ring-2 ring-background shadow-md`} />
                     </div>
+
+                    {/* Quick Add Button - Top Left (appears on hover) */}
+                    {onQuickAdd && (
+                        <div className="absolute left-2 top-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-8 w-8 rounded-full shadow-lg backdrop-blur-md bg-background/80 hover:bg-background"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onQuickAdd();
+                                }}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Gallery Overlay Gradient */}
                     {variant === 'gallery' && (

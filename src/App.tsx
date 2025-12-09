@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 // Lazy load pages for performance optimization
 const Index = lazy(() => import("./pages/Index"));
 const Collections = lazy(() => import("./pages/Collections"));
+const Search = lazy(() => import("./pages/Search"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/add" element={<Index />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/search" element={<Search />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

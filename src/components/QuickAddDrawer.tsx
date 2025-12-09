@@ -1,0 +1,217 @@
+import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, Game } from "@/db";
+import { Check, Plus, FolderPlus, X } from "lucide-react";
+import { toast } from "sonner";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { generateUUID } from "@/lib/uuid";
+
+interface QuickAddDrawerProps {
+    game: Game | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onComplete?: () => void; // Callback after successfully adding to collections
+}
+
+export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAddDrawerProps) {
+    const collections = useLiveQuery(() => db.collections.toArray());
+    const [newCollectionName, setNewCollectionName] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleToggleCollection = async (collectionId: string, currentGameIds: string[]) => {
+        if (!game) return;
+
+        try {
+            const isInCollection = currentGameIds.includes(game.id);
+
+            // If adding to collection (not removing)
+            if (!isInCollection) {
+                // First, ensure game exists in library
+                const existingGame = await db.games.get(game.id);
+                if (!existingGame) {
+                    // Add to library first
+                    await db.games.add(game);
+                }
+            }
+
+            const newGameIds = isInCollection
+                ? currentGameIds.filter(id => id !== game.id)
+                : [...currentGameIds, game.id];
+
+            await db.collections.update(collectionId, { gameIds: newGameIds });
+
+            toast.success(isInCollection ? "Removido da coleção" : "Adicionado à coleção", {
+                duration: 1500,
+            });
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao atualizar coleção");
+        }
+    };
+
+    const handleCreateCollection = async () => {
+        if (!newCollectionName.trim() || !game) return;
+
+        try {
+            // Ensure game exists in library first
+            const existingGame = await db.games.get(game.id);
+            if (!existingGame) {
+                await db.games.add(game);
+            }
+
+            await db.collections.add({
+                id: generateUUID(),
+                name: newCollectionName.trim(),
+                gameIds: [game.id],
+                createdAt: Date.now(),
+            });
+
+            toast.success("Coleção criada!");
+            setNewCollectionName("");
+            setIsCreating(false); // Assuming setIsCreating is the correct state setter based on existing code
+
+            if (onComplete) onComplete();
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao criar coleção");
+        }
+    };
+
+    if (!game) return null;
+
+    return (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+            <DrawerContent className="max-h-[85vh]">
+                <DrawerHeader className="text-left">
+                    <DrawerTitle className="flex items-center gap-2">
+                        <FolderPlus className="h-5 w-5 text-primary" />
+                        Adicionar a Coleções
+                    </DrawerTitle>
+                    <DrawerDescription className="truncate">
+                        {game.title}
+                    </DrawerDescription>
+                </DrawerHeader>
+
+                <div className="px-4 pb-4 overflow-y-auto max-h-[60vh]">
+                    {/* Collections Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        {collections?.map((collection) => {
+                            const isInCollection = collection.gameIds.includes(game.id);
+                            return (
+                                <button
+                                    key={collection.id}
+                                    onClick={() => handleToggleCollection(collection.id, collection.gameIds)}
+                                    className={`
+                                        relative p-4 rounded-lg border-2 transition-all text-left
+                                        ${isInCollection
+                                            ? 'border-primary bg-primary/10'
+                                            : 'border-border hover:border-primary/50 bg-card'
+                                        }
+                                    `}
+                                >
+                                    {/* Checkbox */}
+                                    <div className="absolute top-2 right-2">
+                                        <div className={`
+                                            h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all
+                                            ${isInCollection
+                                                ? 'border-primary bg-primary'
+                                                : 'border-muted-foreground/30'
+                                            }
+                                        `}>
+                                            {isInCollection && <Check className="h-3 w-3 text-primary-foreground" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Collection Info */}
+                                    <div className="pr-6">
+                                        <h3 className="font-medium text-sm truncate mb-1">{collection.name}</h3>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {collection.gameIds.length} {collection.gameIds.length === 1 ? 'jogo' : 'jogos'}
+                                        </Badge>
+                                    </div>
+                                </button>
+                            );
+                        })}
+
+                        {/* Create New Collection Card */}
+                        {!isCreating ? (
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className="p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-2 min-h-[88px]"
+                            >
+                                <Plus className="h-5 w-5 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground font-medium">Nova Coleção</span>
+                            </button>
+                        ) : (
+                            <div className="p-4 rounded-lg border-2 border-primary bg-primary/5 flex flex-col gap-2">
+                                <Input
+                                    placeholder="Nome da coleção..."
+                                    value={newCollectionName}
+                                    onChange={(e) => setNewCollectionName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleCreateCollection();
+                                        if (e.key === 'Escape') setIsCreating(false);
+                                    }}
+                                    autoFocus
+                                    className="h-8"
+                                />
+                                <div className="flex gap-1">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleCreateCollection}
+                                        disabled={!newCollectionName.trim()}
+                                        className="flex-1 h-7"
+                                    >
+                                        <Check className="h-3 w-3 mr-1" />
+                                        Criar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setIsCreating(false);
+                                            setNewCollectionName("");
+                                        }}
+                                        className="h-7 px-2"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {collections?.length === 0 && !isCreating && (
+                        <p className="text-center text-sm text-muted-foreground py-8">
+                            Nenhuma coleção criada ainda.
+                            <br />
+                            <button
+                                onClick={() => setIsCreating(true)}
+                                className="text-primary hover:underline mt-2 inline-block"
+                            >
+                                Criar sua primeira coleção
+                            </button>
+                        </p>
+                    )}
+                </div>
+
+                <DrawerFooter className="pt-2">
+                    <DrawerClose asChild>
+                        <Button variant="outline">Fechar</Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
+    );
+}

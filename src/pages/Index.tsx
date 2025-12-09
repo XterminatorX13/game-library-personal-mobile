@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Game } from "@/db";
-import { Search, SlidersHorizontal, LayoutGrid, List, StretchHorizontal } from "lucide-react";
+import { Search, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,9 +17,9 @@ import { AddGameDialog } from "@/components/AddGameDialog";
 import { GameDetailsDialog } from "@/components/GameDetailsDialog";
 import { GameCard } from "@/components/GameCard";
 import { VirtualGameGrid } from "@/components/VirtualGameGrid";
-import { FilterBottomSheet } from "@/components/FilterBottomSheet";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { BottomNav } from "@/components/BottomNav";
+import { QuickAddDrawer } from "@/components/QuickAddDrawer";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 type Platform = string;
 type StatusFilter = "Todos" | "Backlog" | "Jogando" | "Zerado" | "Dropado";
 type GameStatus = Game['status']; // Extract from imported Game type
-type ViewMode = "grid" | "list" | "gallery";
+type ViewMode = "grid" | "list";
 
 
 const statusLabelMap: Record<GameStatus, StatusFilter> = {
@@ -171,6 +171,21 @@ const Index = () => {
             <TooltipProvider>
               <Tooltip delayDuration={500}>
                 <TooltipTrigger asChild>
+                  <Link to="/search">
+                    <Button variant="ghost" size="icon">
+                      <Search className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Buscar jogos na RAWG</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip delayDuration={500}>
+                <TooltipTrigger asChild>
                   <div className="inline-block">
                     <AddGameDialog onAddGame={handleAddGame} />
                   </div>
@@ -199,54 +214,28 @@ const Index = () => {
               />
             </div>
 
-            {/* Mobile Filter Bottom Sheet */}
-            <div className="md:hidden">
-              <FilterBottomSheet
-                platformFilter={platformFilter}
-                setPlatformFilter={setPlatformFilter}
-                platforms={platforms}
-                sortOrder={sortOrder}
-                setSortOrder={setSortOrder}
-              />
-            </div>
-
-            {/* Desktop Filter Toggle & View Switcher */}
-            <div className="hidden md:flex items-center gap-2">
-              <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border">
+            {/* View Switcher - Grid/List Only */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-muted/50 rounded-lg p-0.5 md:p-1 border border-border">
                 <Button
                   variant={viewMode === "list" ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-7 w-7 md:h-8 md:w-8"
                   onClick={() => setViewMode("list")}
                   title="List View"
                 >
-                  <List className="h-4 w-4" />
+                  <List className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
                 <Button
                   variant={viewMode === "grid" ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-7 w-7 md:h-8 md:w-8"
                   onClick={() => setViewMode("grid")}
                   title="Grid View"
                 >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "gallery" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setViewMode("gallery")}
-                  title="Gallery View"
-                >
-                  <StretchHorizontal className="h-4 w-4" />
+                  <LayoutGrid className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
               </div>
-
-              <div className="w-px h-6 bg-border mx-1" />
-
-              <Button variant="ghost" size="icon" onClick={() => setShowFilters(!showFilters)}>
-                <SlidersHorizontal className={`h-4 w-4 ${showFilters ? "text-primary" : "text-muted-foreground"}`} />
-              </Button>
             </div>
           </div>
 
