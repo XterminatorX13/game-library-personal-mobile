@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getCachedOptimizedImage, getBlurPlaceholder } from "@/lib/imageOptimizer";
+import { getCachedOptimizedImage, getBlurPlaceholder, optimizeImageUrl } from "@/lib/imageOptimizer";
 
 type GameStatus = "backlog" | "playing" | "finished" | "dropped";
 
@@ -16,6 +16,7 @@ type Game = {
 type GameCardProps = {
     game: Game;
     onClick?: () => void;
+    priority?: boolean; // For LCP optimization
 };
 
 const STATUS_COLORS: Record<GameStatus, string> = {
@@ -25,9 +26,10 @@ const STATUS_COLORS: Record<GameStatus, string> = {
     dropped: "bg-destructive shadow-destructive/50",
 };
 
-export function GameCard({ game, onClick }: GameCardProps) {
-    // Optimize image URL for low-end devices
-    const optimizedCover = getCachedOptimizedImage(game.cover);
+export function GameCard({ game, onClick, priority = false }: GameCardProps) {
+    // Optimize image URLs for different screen sizes
+    const mobileImage = optimizeImageUrl(game.cover, { width: 200, quality: 70, output: 'webp' });
+    const desktopImage = getCachedOptimizedImage(game.cover);
     const blurPlaceholder = getBlurPlaceholder(game.cover);
 
     return (
@@ -45,15 +47,20 @@ export function GameCard({ game, onClick }: GameCardProps) {
                         aria-hidden="true"
                     />
 
-                    <img
-                        alt={game.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 relative z-10"
-                        src={optimizedCover}
-                        loading="lazy"
-                        decoding="async"
-                        width="280"
-                        height="420"
-                    />
+                    {/* Responsive image with picture element */}
+                    <picture>
+                        <source srcSet={desktopImage} media="(min-width: 640px)" />
+                        <img
+                            alt={game.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 relative z-10"
+                            src={mobileImage}
+                            loading={priority ? "eager" : "lazy"}
+                            decoding="async"
+                            fetchPriority={priority ? "high" : "auto"}
+                            width="280"
+                            height="420"
+                        />
+                    </picture>
 
                     {/* Status Indicator - Top Right */}
                     <div className="absolute right-2 top-2 z-20">
