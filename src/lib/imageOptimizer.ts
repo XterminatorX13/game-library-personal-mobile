@@ -7,7 +7,7 @@ export function optimizeImageUrl(originalUrl: string, options: {
 } = {}): string {
     if (!originalUrl) return originalUrl;
 
-    const { width = 300, quality = 60, output = 'webp' } = options;
+    const { width = 300, quality = 70, output = 'webp' } = options;
 
     // Use images.weserv.nl - Free OSS image optimization service
     const params = new URLSearchParams({
@@ -32,7 +32,7 @@ export function getCachedOptimizedImage(url: string): string {
 
     const optimized = optimizeImageUrl(url, {
         width: 280,
-        quality: 55,
+        quality: 65,
         output: 'webp'
     });
 
