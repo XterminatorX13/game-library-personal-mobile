@@ -38,8 +38,8 @@ export function getCachedOptimizedImage(url: string): string {
     }
 
     const optimized = optimizeImageUrl(url, {
-        width: 280,
-        quality: 70,
+        width: 400, // Increased for High DPI screens
+        quality: 80,
         output: 'webp'
     });
 

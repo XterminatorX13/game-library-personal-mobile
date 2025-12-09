@@ -27,8 +27,8 @@ const STATUS_COLORS: Record<GameStatus, string> = {
 };
 
 export function GameCard({ game, onClick, priority = false }: GameCardProps) {
-    // Optimize image URLs for different screen sizes
-    const mobileImage = optimizeImageUrl(game.cover, { width: 200, quality: 70, output: 'webp' });
+    // Optimize image URLs for different screen sizes - Increased resolution for High DPI
+    const mobileImage = optimizeImageUrl(game.cover, { width: 400, quality: 80, output: 'webp' });
     const desktopImage = getCachedOptimizedImage(game.cover);
     const blurPlaceholder = getBlurPlaceholder(game.cover);
 
