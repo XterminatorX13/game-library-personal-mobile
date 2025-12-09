@@ -76,16 +76,16 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     const handleAdd = (game: EnrichedGame) => {
         // CRITICAL: Optimize cover URL BEFORE saving to database
         // This prevents caching 8MB raw PNGs from SteamGridDB
-        const rawCoverUrl = game.highQualityCover || game.background_image || "https://via.placeholder.com/400x600/1a1f29/6366f1?text=No+Cover";
+        const rawCoverUrl = game.highQualityCover || game.background_image || "";
 
         // Force optimization via weserv.nl (saves bandwidth + storage)
-        const optimizedCover = rawCoverUrl.includes('placeholder')
-            ? rawCoverUrl
-            : optimizeImageUrl(rawCoverUrl, {
+        const optimizedCover = rawCoverUrl
+            ? optimizeImageUrl(rawCoverUrl, {
                 width: 400,
                 quality: 75, // Balanced quality (was 100)
                 output: 'webp'
-            });
+            })
+            : ""; // No placeholder - empty if no cover
 
         const newGame = {
             id: game.id.toString(),
@@ -94,7 +94,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             store: "manual",
             status: "backlog",
             hoursPlayed: 0,
-            cover: optimizedCover, // ✅ Pre-optimized URL
+            cover: optimizedCover, // ✅ Pre-optimized URL (or empty)
             tags: game.genres?.map(g => g.name).slice(0, 3) || [],
             rating: game.rating || 0,
             releaseYear: game.released?.split("-")[0] || undefined,
@@ -153,7 +153,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                             onClick={() => handleAdd(game)}
                                         >
                                             <img
-                                                src={game.highQualityCover || game.background_image || "https://via.placeholder.com/400x600/1a1f29/6366f1?text=No+Cover"}
+                                                src={game.highQualityCover || game.background_image || ""}
                                                 alt={game.name}
                                                 className="h-20 w-14 object-cover rounded-md shadow-sm bg-muted"
                                                 width={56}
