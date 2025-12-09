@@ -130,7 +130,13 @@ export function Search() {
                             <Input
                                 placeholder="Buscar jogos..."
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    // Auto-search on mobile (debounced)
+                                    if (window.innerWidth < 640) {
+                                        handleSearch();
+                                    }
+                                }}
                                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                                 className="pl-9 h-9 bg-muted/50 border-muted-foreground/20 focus-visible:ring-primary/50"
                             />
@@ -174,8 +180,7 @@ export function Search() {
             <main className="container mx-auto px-4 py-4">
                 {isSearching ? (
                     <div className={`grid gap-3 ${viewMode === 'list' ? 'grid-cols-1' :
-                        viewMode === 'gallery' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
-                            'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                        'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                         {Array(12).fill(null).map((_, i) => (
                             <div key={i} className="animate-pulse">
@@ -185,7 +190,6 @@ export function Search() {
                     </div>
                 ) : results.length > 0 ? (
                     <div className={`grid gap-3 ${viewMode === 'list' ? 'grid-cols-1' :
-                        viewMode === 'gallery' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
                             'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                         {results.map((result) => {

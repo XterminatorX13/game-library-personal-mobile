@@ -239,43 +239,41 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Filters - Collapsible */}
-          {showFilters && (
-            <div className="flex gap-2 animate-in slide-in-from-top-2">
-              <Select
-                value={platformFilter}
-                onValueChange={(value) => setPlatformFilter(value as Platform)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Plataforma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todas</SelectItem>
-                  {platforms.map((platform) => (
-                    <SelectItem key={platform} value={platform}>
-                      {platform}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Filters - Always Visible for better UX */}
+          <div className="flex gap-2 flex-wrap">
+            <Select
+              value={platformFilter}
+              onValueChange={(value) => setPlatformFilter(value as Platform)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Plataforma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todas</SelectItem>
+                {platforms.map((platform) => (
+                  <SelectItem key={platform} value={platform}>
+                    {platform}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos</SelectItem>
-                  <SelectItem value="Backlog">Backlog</SelectItem>
-                  <SelectItem value="Jogando">Jogando</SelectItem>
-                  <SelectItem value="Zerado">Zerado</SelectItem>
-                  <SelectItem value="Dropado">Dropado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos</SelectItem>
+                <SelectItem value="Backlog">Backlog</SelectItem>
+                <SelectItem value="Jogando">Jogando</SelectItem>
+                <SelectItem value="Zerado">Zerado</SelectItem>
+                <SelectItem value="Dropado">Dropado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Status Tabs - Better Mobile UX */}
