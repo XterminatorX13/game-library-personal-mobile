@@ -16,11 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Star, Clock, Calendar, Trash2, Save, FolderPlus, Check, Plus, Library, ExternalLink, Timer } from "lucide-react";
+import { Star, Clock, Calendar, Trash2, Save, FolderPlus, Check, Plus, Library, ExternalLink, Timer, Award, FileText } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
 import { toast } from "sonner";
 import { generateUUID } from "@/lib/uuid";
+import { useTranslation, Language } from "@/lib/i18n";
 
 // Import types from Index.tsx (or define them here if not exported)
 // For now, I'll redefine/extend locally to avoid circular deps or complex refactors
@@ -45,6 +46,10 @@ type Game = {
     hltbMainExtra?: number;
     hltbCompletionist?: number;
     hltbUrl?: string;
+    // RAWG extended data
+    description?: string;
+    metacritic?: number | null;
+    rawgPlaytime?: number;
 };
 
 type GameDetailsDialogProps = {
@@ -56,6 +61,10 @@ type GameDetailsDialogProps = {
 };
 
 export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDeleteGame }: GameDetailsDialogProps) {
+    // i18n
+    const lang: Language = 'pt';
+    const { t } = useTranslation(lang);
+
     const [notes, setNotes] = useState("");
     const [status, setStatus] = useState<GameStatus>("backlog");
     const [rating, setRating] = useState(0);
@@ -266,11 +275,50 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                         </div>
                     )}
 
+                    {/* Metacritic & RAWG Playtime (fallback for HLTB) */}
+                    {(game.metacritic || game.rawgPlaytime) && (
+                        <div className="grid grid-cols-2 gap-3">
+                            {game.metacritic && (
+                                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                                    <Award className="h-5 w-5 text-green-500" />
+                                    <div>
+                                        <div className="text-lg font-bold text-foreground">{game.metacritic}</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.metacritic')}</div>
+                                    </div>
+                                </div>
+                            )}
+                            {game.rawgPlaytime && !game.hltbMainStory && (
+                                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                                    <Clock className="h-5 w-5 text-blue-400" />
+                                    <div>
+                                        <div className="text-lg font-bold text-foreground">{game.rawgPlaytime}h</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.avgPlaytime')}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Description */}
+                    {game.description && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium leading-none flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                {t('gameDetails.description')}
+                            </label>
+                            <div className="bg-muted/30 rounded-lg p-3 text-sm text-muted-foreground max-h-32 overflow-y-auto">
+                                {game.description.length > 500
+                                    ? game.description.substring(0, 500) + "..."
+                                    : game.description}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Notes (PKM) */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Personal Notes</label>
+                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t('gameDetails.personalNotes')}</label>
                         <Textarea
-                            placeholder="Write your thoughts, review, or memories about this game..."
+                            placeholder={t('gameDetails.notesPlaceholder')}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             className="min-h-[100px]"

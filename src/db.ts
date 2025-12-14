@@ -19,6 +19,10 @@ export interface Game {
   hltbMainExtra?: number;      // Hours for main + extras
   hltbCompletionist?: number;  // Hours for 100%
   hltbUrl?: string;            // Link to HLTB page
+  // RAWG extended data (optional)
+  description?: string;        // Game description
+  metacritic?: number | null;  // Metacritic score 0-100
+  rawgPlaytime?: number;       // Average playtime (fallback for HLTB)
 }
 
 export interface Collection {

@@ -50,6 +50,36 @@ export const translations = {
             errorUpdate: "Falha ao atualizar coleção",
             successDeleted: "Coleção excluída",
             errorDelete: "Falha ao excluir coleção",
+        },
+        gameDetails: {
+            dialogTitle: "Detalhes do Jogo",
+            status: "Status",
+            rating: "Avaliação",
+            hoursPlayed: "Horas Jogadas",
+            personalNotes: "Notas Pessoais",
+            notesPlaceholder: "Escreva suas impressões, review ou memórias sobre este jogo...",
+            collections: "Coleções",
+            newCollection: "Nova...",
+            noCollections: "Nenhuma coleção criada.",
+            save: "Salvar",
+            delete: "Deletar",
+            confirmDelete: "Tem certeza?",
+            confirmYes: "Sim, Deletar",
+            // Status options
+            statusBacklog: "📅 Backlog",
+            statusPlaying: "🕹️ Jogando",
+            statusFinished: "🏆 Finalizado",
+            statusDropped: "🗑️ Abandonado",
+            // HLTB Section
+            hltbTitle: "HowLongToBeat",
+            hltbMainStory: "História Principal",
+            hltbMainExtra: "Principal + Extras",
+            hltbCompletionist: "Completionist",
+            // RAWG Section
+            metacritic: "Metacritic",
+            avgPlaytime: "Tempo Médio",
+            description: "Descrição",
+            noDescription: "Sem descrição disponível.",
         }
     },
     en: {
@@ -103,6 +133,36 @@ export const translations = {
             errorUpdate: "Failed to update collection",
             successDeleted: "Collection deleted",
             errorDelete: "Failed to delete collection",
+        },
+        gameDetails: {
+            dialogTitle: "Game Details",
+            status: "Status",
+            rating: "Rating",
+            hoursPlayed: "Hours Played",
+            personalNotes: "Personal Notes",
+            notesPlaceholder: "Write your thoughts, review, or memories about this game...",
+            collections: "Collections",
+            newCollection: "New...",
+            noCollections: "No collections yet.",
+            save: "Save",
+            delete: "Delete",
+            confirmDelete: "Are you sure?",
+            confirmYes: "Yes, Delete",
+            // Status options
+            statusBacklog: "📅 Backlog",
+            statusPlaying: "🕹️ Playing",
+            statusFinished: "🏆 Finished",
+            statusDropped: "🗑️ Dropped",
+            // HLTB Section
+            hltbTitle: "HowLongToBeat",
+            hltbMainStory: "Main Story",
+            hltbMainExtra: "Main + Extras",
+            hltbCompletionist: "Completionist",
+            // RAWG Section
+            metacritic: "Metacritic",
+            avgPlaytime: "Avg Playtime",
+            description: "Description",
+            noDescription: "No description available.",
         }
     }
 };

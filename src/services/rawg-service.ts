@@ -10,6 +10,10 @@ export type RawgGame = {
     released: string;
     platforms: { platform: { name: string } }[];
     genres: { name: string }[];
+    // Extended fields (from /games/{id} endpoint)
+    playtime?: number;           // Average playtime in hours
+    description_raw?: string;    // Plain text description
+    metacritic?: number | null;  // Metacritic score 0-100
 };
 
 export const RawgService = {

@@ -80,7 +80,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
         }
     };
 
-    const handleAdd = (game: EnrichedGame) => {
+    const handleAdd = async (game: EnrichedGame) => {
         // CRITICAL: Optimize cover URL BEFORE saving to database
         // This prevents caching 8MB raw PNGs from SteamGridDB
         const rawCoverUrl = game.highQualityCover || game.background_image || "";
@@ -93,6 +93,9 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                 output: 'webp'
             })
             : ""; // No placeholder - empty if no cover
+
+        // Fetch RAWG extended details (description, metacritic, playtime)
+        const rawgDetails = await RawgService.getGameDetails(game.id);
 
         const newGame = {
             id: game.id.toString(),
@@ -110,6 +113,10 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             hltbMainExtra: game.hltb?.mainExtra ?? undefined,
             hltbCompletionist: game.hltb?.completionist ?? undefined,
             hltbUrl: game.hltb?.gameUrl ?? undefined,
+            // RAWG extended data
+            description: rawgDetails?.description_raw ?? undefined,
+            metacritic: rawgDetails?.metacritic ?? undefined,
+            rawgPlaytime: rawgDetails?.playtime ?? undefined,
         };
 
         onAddGame(newGame);
@@ -117,6 +124,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
         setSearchTerm("");
         setResults([]);
     };
+
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
