@@ -1,8 +1,7 @@
 /**
  * HowLongToBeat Service
- * Fetches game completion times via Vercel Edge Function (bypasses CORS)
- * 
- * The Edge Function (/api/hltb) makes server-side requests to HLTB
+ * Uses public HLTB proxy API: hltb-proxy.fly.dev
+ * Source: https://github.com/DareFox/HowLongToBeat-Proxy-API
  */
 
 export interface HltbResult {
@@ -15,13 +14,12 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// Use relative URL - works both in dev (Vite proxy) and prod (Vercel)
-const API_URL = "/api/hltb";
+// Public proxy - no CORS issues!
+const PROXY_URL = "https://hltb-proxy.fly.dev/v1/query";
 
 export const HltbService = {
     /**
-     * Search for a game on HowLongToBeat
-     * Uses Vercel Edge Function to bypass CORS
+     * Search for a game on HowLongToBeat via public proxy
      * @param gameName - Name of the game to search
      * @returns HltbResult or null if not found/error
      */
@@ -30,30 +28,33 @@ export const HltbService = {
 
         try {
             const response = await fetch(
-                `${API_URL}?game=${encodeURIComponent(gameName)}`
+                `${PROXY_URL}?title=${encodeURIComponent(gameName)}&page=1`
             );
 
             if (!response.ok) {
-                console.warn("[HLTB] API request failed:", response.status);
+                console.warn("[HLTB] Proxy request failed:", response.status);
                 return null;
             }
 
             const data = await response.json();
 
-            // Check for error response from our Edge Function
-            if (data.error) {
+            // Proxy returns array of results
+            if (!data || !Array.isArray(data) || data.length === 0) {
                 console.debug("[HLTB] No results for:", gameName);
                 return null;
             }
 
+            // Get first (best) match
+            const game = data[0];
+
             const result: HltbResult = {
-                gameId: data.gameId,
-                gameName: data.gameName,
-                mainStory: data.mainStory,
-                mainExtra: data.mainExtra,
-                completionist: data.completionist,
-                imageUrl: data.imageUrl,
-                gameUrl: data.gameUrl,
+                gameId: String(game.id || game.game_id || ""),
+                gameName: game.game_name || game.name || "",
+                mainStory: game.comp_main_h || game.gameplayMain || null,
+                mainExtra: game.comp_plus_h || game.gameplayMainExtra || null,
+                completionist: game.comp_100_h || game.gameplayCompletionist || null,
+                imageUrl: game.game_image || game.imageUrl || null,
+                gameUrl: `https://howlongtobeat.com/game/${game.id || game.game_id}`,
             };
 
             console.debug("[HLTB] Found:", result.gameName, {
