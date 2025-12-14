@@ -10,13 +10,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Plus, Loader2, Gamepad2 } from "lucide-react";
+import { Search, Plus, Loader2, Gamepad2, Clock } from "lucide-react";
 import { RawgService, RawgGame } from "@/services/rawg-service";
 import { SteamGridService } from "@/services/steamgrid-service";
+import { HltbService, HltbResult } from "@/services/hltb-service";
 import { optimizeImageUrl } from "@/lib/imageOptimizer";
 
 type EnrichedGame = RawgGame & {
     highQualityCover?: string;
+    hltb?: HltbResult | null;
 };
 
 type AddGameDialogProps = {
@@ -38,13 +40,17 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                 // 1. Get game metadata from RAWG
                 const rawgGames = await RawgService.searchGames(term);
 
-                // 2. Enrich with SteamGridDB covers only
+                // 2. Enrich with SteamGridDB covers + HLTB times
                 const enrichedGames = await Promise.all(
                     rawgGames.slice(0, 8).map(async (game) => {
                         try {
-                            const steamGridResults = await SteamGridService.searchGame(game.name);
-                            let highQualityCover = null;
+                            // Parallel fetch: SteamGrid cover + HLTB times
+                            const [steamGridResults, hltbData] = await Promise.all([
+                                SteamGridService.searchGame(game.name),
+                                HltbService.searchGame(game.name),
+                            ]);
 
+                            let highQualityCover = null;
                             if (steamGridResults.length > 0) {
                                 const gameId = steamGridResults[0].id;
                                 highQualityCover = await SteamGridService.getGrids(gameId);
@@ -53,10 +59,11 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                             return {
                                 ...game,
                                 highQualityCover,
+                                hltb: hltbData,
                             };
                         } catch (error) {
                             console.error(`Error enriching game ${game.name}:`, error);
-                            return game;
+                            return { ...game, hltb: null };
                         }
                     })
                 );
@@ -98,6 +105,11 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             tags: game.genres?.map(g => g.name).slice(0, 3) || [],
             rating: game.rating || 0,
             releaseYear: game.released?.split("-")[0] || undefined,
+            // HLTB data
+            hltbMainStory: game.hltb?.mainStory ?? undefined,
+            hltbMainExtra: game.hltb?.mainExtra ?? undefined,
+            hltbCompletionist: game.hltb?.completionist ?? undefined,
+            hltbUrl: game.hltb?.gameUrl ?? undefined,
         };
 
         onAddGame(newGame);
@@ -168,6 +180,12 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                                     {game.rating > 0 && (
                                                         <span className="flex items-center text-yellow-500">★ {game.rating}</span>
                                                     )}
+                                                    {game.hltb?.mainStory && (
+                                                        <span className="flex items-center gap-1 text-blue-400" title="HowLongToBeat - Main Story">
+                                                            <Clock className="h-3 w-3" />
+                                                            {game.hltb.mainStory}h
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {/* Platform badges */}
                                                 {game.platforms && game.platforms.length > 0 && (
@@ -207,9 +225,8 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                 </div>
                                 <p className="text-sm">Digite o nome do jogo para buscar capas HD e ratings automaticamente.</p>
                                 <div className="flex items-center gap-2 mt-3 text-xs opacity-60">
-                                    <span>Powered by RAWG · SteamGridDB</span>
-                                </div>
-                            </div>
+                                    <span>Powered by RAWG · SteamGridDB · HLTB</span>
+                                </div>                    </div>
                         )}
                     </div>
                 </div>

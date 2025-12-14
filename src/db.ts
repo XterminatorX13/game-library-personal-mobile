@@ -14,6 +14,11 @@ export interface Game {
   notes?: string;
   releaseYear?: string;
   addedAt: number;
+  // HowLongToBeat data (optional)
+  hltbMainStory?: number;      // Hours to beat main story
+  hltbMainExtra?: number;      // Hours for main + extras
+  hltbCompletionist?: number;  // Hours for 100%
+  hltbUrl?: string;            // Link to HLTB page
 }
 
 export interface Collection {

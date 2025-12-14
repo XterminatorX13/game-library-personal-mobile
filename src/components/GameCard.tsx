@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GamePlaceholder } from "@/components/GamePlaceholder";
@@ -21,7 +22,7 @@ interface GameCardProps {
     onClick?: () => void;
     priority?: boolean;
     variant?: "grid" | "list" | "gallery";
-    onQuickAdd?: () => void; // New prop for Quick Add
+    onQuickAdd?: () => void;
 };
 
 const STATUS_COLORS: Record<GameStatus, string> = {
@@ -31,7 +32,7 @@ const STATUS_COLORS: Record<GameStatus, string> = {
     dropped: "bg-destructive shadow-destructive/50",
 };
 
-export function GameCard({ game, onClick, priority = false, variant = "grid", onQuickAdd }: GameCardProps) {
+function GameCardComponent({ game, onClick, priority = false, variant = "grid", onQuickAdd }: GameCardProps) {
     // Check if cover exists
     if (!game.cover) {
         // Placeholder/Empty state - Adjusted for list view
@@ -194,3 +195,17 @@ export function GameCard({ game, onClick, priority = false, variant = "grid", on
         </div>
     );
 }
+
+// Memoized GameCard - only re-renders when game data or handlers change
+export const GameCard = React.memo(GameCardComponent, (prev, next) => {
+    return (
+        prev.game.id === next.game.id &&
+        prev.game.title === next.game.title &&
+        prev.game.cover === next.game.cover &&
+        prev.game.status === next.game.status &&
+        prev.game.rating === next.game.rating &&
+        prev.variant === next.variant &&
+        prev.priority === next.priority
+    );
+});
+
