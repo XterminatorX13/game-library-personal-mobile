@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Star, Clock, Calendar, Trash2, Save, FolderPlus, Check, Plus, Library } from "lucide-react";
+import { Star, Clock, Calendar, Trash2, Save, FolderPlus, Check, Plus, Library, ExternalLink, Timer } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
 import { toast } from "sonner";
@@ -40,6 +40,11 @@ type Game = {
     difficulty?: string;
     notes?: string;
     releaseYear?: string;
+    // HLTB data
+    hltbMainStory?: number;
+    hltbMainExtra?: number;
+    hltbCompletionist?: number;
+    hltbUrl?: string;
 };
 
 type GameDetailsDialogProps = {
@@ -220,6 +225,46 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                             />
                         </div>
                     </div>
+
+                    {/* HLTB Times */}
+                    {(game.hltbMainStory || game.hltbMainExtra || game.hltbCompletionist) && (
+                        <div className="space-y-3">
+                            <label className="text-sm font-medium leading-none flex items-center gap-2">
+                                <Timer className="h-4 w-4 text-blue-400" />
+                                HowLongToBeat
+                                {game.hltbUrl && (
+                                    <a
+                                        href={game.hltbUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-400 hover:underline flex items-center gap-1"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                )}
+                            </label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {game.hltbMainStory && (
+                                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                        <div className="text-lg font-bold text-foreground">{game.hltbMainStory}h</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Main Story</div>
+                                    </div>
+                                )}
+                                {game.hltbMainExtra && (
+                                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                        <div className="text-lg font-bold text-foreground">{game.hltbMainExtra}h</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Main + Extra</div>
+                                    </div>
+                                )}
+                                {game.hltbCompletionist && (
+                                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                        <div className="text-lg font-bold text-foreground">{game.hltbCompletionist}h</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Completionist</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Notes (PKM) */}
                     <div className="space-y-2">
