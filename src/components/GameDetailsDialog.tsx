@@ -240,7 +240,7 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                         <div className="space-y-3">
                             <label className="text-sm font-medium leading-none flex items-center gap-2">
                                 <Timer className="h-4 w-4 text-blue-400" />
-                                HowLongToBeat
+                                {t('gameDetails.hltbTitle')}
                                 {game.hltbUrl && (
                                     <a
                                         href={game.hltbUrl}
@@ -256,19 +256,19 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                                 {game.hltbMainStory && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbMainStory}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Main Story</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbMainStory')}</div>
                                     </div>
                                 )}
                                 {game.hltbMainExtra && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbMainExtra}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Main + Extra</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbMainExtra')}</div>
                                     </div>
                                 )}
                                 {game.hltbCompletionist && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbCompletionist}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Completionist</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbCompletionist')}</div>
                                     </div>
                                 )}
                             </div>
