@@ -1,7 +1,6 @@
 /**
  * HowLongToBeat Service
- * Uses public HLTB proxy API: hltb-proxy.fly.dev
- * Source: https://github.com/DareFox/HowLongToBeat-Proxy-API
+ * Uses local FastAPI proxy (running on port 3001)
  */
 
 export interface HltbResult {
@@ -14,12 +13,12 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// Public proxy - no CORS issues!
-const PROXY_URL = "https://hltb-proxy.fly.dev/v1/query";
+// Local FastAPI proxy (bypass CORS)
+const API_URL = "http://localhost:3001/api/hltb";
 
 export const HltbService = {
     /**
-     * Search for a game on HowLongToBeat via public proxy
+     * Search for a game on HowLongToBeat via local FastAPI proxy
      * @param gameName - Name of the game to search
      * @returns HltbResult or null if not found/error
      */
@@ -28,36 +27,33 @@ export const HltbService = {
 
         try {
             const response = await fetch(
-                `${PROXY_URL}?title=${encodeURIComponent(gameName)}&page=1`
+                `${API_URL}?game=${encodeURIComponent(gameName)}`
             );
 
             if (!response.ok) {
-                console.warn("[HLTB] Proxy request failed:", response.status);
+                console.warn("[HLTB] API request failed:", response.status);
                 return null;
             }
 
             const data = await response.json();
 
-            // Proxy returns array of results
-            if (!data || !Array.isArray(data) || data.length === 0) {
+            // Check for error response
+            if (data.error || !data.gameId) {
                 console.debug("[HLTB] No results for:", gameName);
                 return null;
             }
 
-            // Get first (best) match
-            const game = data[0];
-
             const result: HltbResult = {
-                gameId: String(game.id || game.game_id || ""),
-                gameName: game.game_name || game.name || "",
-                mainStory: game.comp_main_h || game.gameplayMain || null,
-                mainExtra: game.comp_plus_h || game.gameplayMainExtra || null,
-                completionist: game.comp_100_h || game.gameplayCompletionist || null,
-                imageUrl: game.game_image || game.imageUrl || null,
-                gameUrl: `https://howlongtobeat.com/game/${game.id || game.game_id}`,
+                gameId: data.gameId,
+                gameName: data.gameName,
+                mainStory: data.mainStory,
+                mainExtra: data.mainExtra,
+                completionist: data.completionist,
+                imageUrl: data.imageUrl,
+                gameUrl: data.gameUrl,
             };
 
-            console.debug("[HLTB] Found:", result.gameName, {
+            console.debug("[HLTB] Found via FastAPI:", result.gameName, {
                 main: result.mainStory,
                 extra: result.mainExtra,
                 "100%": result.completionist,
