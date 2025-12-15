@@ -1,6 +1,6 @@
 /**
  * HowLongToBeat Service
- * Uses Cloudflare Worker (production) with localhost fallback (dev)
+ * ULTIMATE SOLUTION - Tries EVERYTHING to get HLTB data
  */
 
 export interface HltbResult {
@@ -13,51 +13,49 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// API URLs: Cloudflare Worker (production) with localhost fallback (dev)
-const CLOUDFLARE_API_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
-const LOCAL_API_URL = "http://localhost:3001/api/hltb";
-
-// Cache localhost availability check
-let useLocalhost: boolean | null = null;
-
-const checkLocalhost = async (): Promise<boolean> => {
-    if (useLocalhost !== null) return useLocalhost;
-
-    try {
-        const response = await fetch("http://localhost:3001/", {
-            method: 'GET',
-            signal: AbortSignal.timeout(1000) // Increased from 300ms to 1s
-        });
-        useLocalhost = response.ok;
-    } catch {
-        useLocalhost = false;
-    }
-
-    console.log('[HLTB] Using', useLocalhost ? 'localhost:3001' : 'Cloudflare Worker');
-    return useLocalhost;
-};
+// API URLs Priority (tries everything):
+// 1. /api/hltb (Vercel Edge Function - same origin, fast)
+// 2. Cloudflare Worker (has POST + Scraping + Search Engines)
+const EDGE_FUNCTION_URL = "/api/hltb";
+const CLOUDFLARE_WORKER_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
 
 export const HltbService = {
     /**
-     * Search for a game on HowLongToBeat
+     * ULTIMATE HLTB Search - tries EVERYTHING
+     * 1. Vercel Edge Function (fast, same-origin)
+     * 2. Cloudflare Worker (POST + Scraping + DDG/Bing/Google)
      * 100% OPTIONAL - silently fails without blocking the app
      */
     async searchGame(gameName: string): Promise<HltbResult | null> {
         if (!gameName || gameName.length < 2) return null;
 
+        // Try Edge Function first (fast, same domain)
+        const edgeResult = await this._trySource(EDGE_FUNCTION_URL, gameName, 3000);
+        if (edgeResult) {
+            console.debug(`[HLTB] ✅ Success via Edge Function`);
+            return edgeResult;
+        }
+
+        // Fallback: Cloudflare Worker (more robust, tries scraping)
+        console.warn(`[HLTB] Edge Function failed, trying Cloudflare Worker...`);
+        const workerResult = await this._trySource(CLOUDFLARE_WORKER_URL, gameName, 5000);
+        if (workerResult) {
+            console.debug(`[HLTB] ✅ Success via Cloudflare Worker`);
+            return workerResult;
+        }
+
+        // All sources failed
+        console.warn(`[HLTB] ❌ All sources failed for "${gameName}"`);
+        return null;
+    },
+
+    /**
+     * Try a single HLTB source with timeout
+     */
+    async _trySource(apiUrl: string, gameName: string, timeoutMs: number): Promise<HltbResult | null> {
         try {
-            // Use Custom Env URL > Localhost > Cloudflare
-            const isLocal = await checkLocalhost();
-            let apiUrl = isLocal ? LOCAL_API_URL : CLOUDFLARE_API_URL;
-
-            // Allow override via .env (e.g. for Railway)
-            if (import.meta.env.VITE_HLTB_API_URL) {
-                apiUrl = import.meta.env.VITE_HLTB_API_URL;
-            }
-
-            // ⏱️ 5 SECOND TIMEOUT - Don't wait forever
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
             const response = await fetch(
                 `${apiUrl}?game=${encodeURIComponent(gameName)}`,
@@ -67,7 +65,6 @@ export const HltbService = {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                console.warn(`[HLTB] API returned ${response.status} - skipping silently`);
                 return null;
             }
 
@@ -75,7 +72,6 @@ export const HltbService = {
 
             // Check for error response
             if (data.error || !data.gameId) {
-                console.debug(`[HLTB] No results for: ${gameName} - continuing without HLTB data`);
                 return null;
             }
 
@@ -89,20 +85,9 @@ export const HltbService = {
                 gameUrl: data.gameUrl,
             };
 
-            console.debug(`[HLTB] ✅ Found: ${result.gameName}`, {
-                main: result.mainStory,
-                extra: result.mainExtra,
-                "100%": result.completionist,
-            });
-
             return result;
         } catch (error: any) {
-            // SILENT FAILURE - Don't annoy the user
-            if (error.name === 'AbortError') {
-                console.warn(`[HLTB] Timeout after 5s for "${gameName}" - skipping`);
-            } else {
-                console.warn(`[HLTB] Error (non-critical): ${error.message}`);
-            }
+            // Silent failure - timeout or network error
             return null;
         }
     },
