@@ -10,6 +10,27 @@ export class SyncService {
 
         try {
             console.log("Starting sync...");
+
+            // 0. Process Local Deletions (Critical to prevent Zombie Games)
+            const deletedGames = await db.table('deleted_games').toArray();
+            if (deletedGames.length > 0) {
+                console.log(`Processing ${deletedGames.length} deletions...`);
+                // Delete from Supabase
+                const idsToDelete = deletedGames.map(d => d.id);
+                const { error: deleteError } = await supabase
+                    .from('games')
+                    .delete()
+                    .in('id', idsToDelete);
+
+                if (!deleteError) {
+                    // Clear local deletion queue on success
+                    await db.table('deleted_games').bulkDelete(idsToDelete);
+                    console.log("Deletions synced and cleared.");
+                } else {
+                    console.error("Failed to sync deletions:", deleteError);
+                }
+            }
+
             // 1. Fetch all Local Data
             const localGames = await db.games.toArray();
 

@@ -75,14 +75,23 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false); // Confirmation state for delete
 
+    // Live query to keep game data fresh (e.g. after background sync/enrichment)
+    const liveGame = useLiveQuery(
+        () => (game ? db.games.get(game.id) : undefined),
+        [game?.id]
+    );
+
+    // Use liveGame if available, otherwise fallback to prop game
+    const activeGame = liveGame || game;
+
     useEffect(() => {
-        if (game) {
-            setNotes(game.notes || "");
-            setStatus(game.status);
-            setRating(game.rating || 0);
-            setHoursPlayed(game.hoursPlayed || 0);
+        if (activeGame) {
+            setNotes(activeGame.notes || "");
+            setStatus(activeGame.status);
+            setRating(activeGame.rating || 0);
+            setHoursPlayed(activeGame.hoursPlayed || 0);
         }
-    }, [game]);
+    }, [activeGame]);
 
     // Reset delete confirmation when dialog closes
     useEffect(() => {
@@ -137,7 +146,7 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
 
     const handleSave = () => {
         onUpdateGame({
-            ...game,
+            ...activeGame,
             notes,
             status,
             rating,
@@ -155,28 +164,28 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
 
                 <div className="relative h-48 w-full overflow-hidden">
                     <img
-                        src={game.cover}
-                        alt={game.title}
+                        src={activeGame.cover}
+                        alt={activeGame.title}
                         className="absolute inset-0 h-full w-full object-cover opacity-40 blur-sm scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
 
                     <div className="absolute bottom-4 left-6 flex items-end gap-4 z-10">
                         <img
-                            src={game.cover}
-                            alt={game.title}
+                            src={activeGame.cover}
+                            alt={activeGame.title}
                             className="h-32 w-24 rounded-lg shadow-2xl border border-white/10 object-cover"
                             width={96}
                             height={128}
                         />
                         <div className="mb-1">
-                            <h2 className="text-2xl font-bold text-white leading-tight shadow-black drop-shadow-md">{game.title}</h2>
+                            <h2 className="text-2xl font-bold text-white leading-tight shadow-black drop-shadow-md">{activeGame.title}</h2>
                             <div className="flex items-center gap-2 mt-1 text-sm text-slate-300">
                                 <Badge variant="secondary" className="bg-white/10 backdrop-blur-md border-0 text-white hover:bg-white/20">
-                                    {game.platform}
+                                    {activeGame.platform}
                                 </Badge>
-                                {game.releaseYear && (
-                                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {game.releaseYear}</span>
+                                {activeGame.releaseYear && (
+                                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {activeGame.releaseYear}</span>
                                 )}
                             </div>
                         </div>
@@ -236,14 +245,14 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                     </div>
 
                     {/* HLTB Times */}
-                    {(game.hltbMainStory || game.hltbMainExtra || game.hltbCompletionist) && (
+                    {(activeGame.hltbMainStory || activeGame.hltbMainExtra || activeGame.hltbCompletionist) && (
                         <div className="space-y-3">
                             <label className="text-sm font-medium leading-none flex items-center gap-2">
                                 <Timer className="h-4 w-4 text-blue-400" />
                                 {t('gameDetails.hltbTitle')}
-                                {game.hltbUrl && (
+                                {activeGame.hltbUrl && (
                                     <a
-                                        href={game.hltbUrl}
+                                        href={activeGame.hltbUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs text-blue-400 hover:underline flex items-center gap-1"
@@ -253,24 +262,24 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                                 )}
                             </label>
                             <div className="grid grid-cols-3 gap-3">
-                                {game.hltbMainStory && (
+                                {activeGame.hltbMainStory && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                        <div className="text-lg font-bold text-foreground">{game.hltbMainStory}h</div>
-                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbMainStory / 24).toFixed(1)} dias</div>
+                                        <div className="text-lg font-bold text-foreground">{activeGame.hltbMainStory}h</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(activeGame.hltbMainStory / 24).toFixed(1)} dias</div>
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbMainStory')}</div>
                                     </div>
                                 )}
-                                {game.hltbMainExtra && (
+                                {activeGame.hltbMainExtra && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                        <div className="text-lg font-bold text-foreground">{game.hltbMainExtra}h</div>
-                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbMainExtra / 24).toFixed(1)} dias</div>
+                                        <div className="text-lg font-bold text-foreground">{activeGame.hltbMainExtra}h</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(activeGame.hltbMainExtra / 24).toFixed(1)} dias</div>
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbMainExtra')}</div>
                                     </div>
                                 )}
-                                {game.hltbCompletionist && (
+                                {activeGame.hltbCompletionist && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                        <div className="text-lg font-bold text-foreground">{game.hltbCompletionist}h</div>
-                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbCompletionist / 24).toFixed(1)} dias</div>
+                                        <div className="text-lg font-bold text-foreground">{activeGame.hltbCompletionist}h</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(activeGame.hltbCompletionist / 24).toFixed(1)} dias</div>
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbCompletionist')}</div>
                                     </div>
                                 )}
@@ -279,40 +288,32 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                     )}
 
                     {/* Metacritic & RAWG Playtime (fallback for HLTB) */}
-                    {(game.metacritic || game.rawgPlaytime) && (
+                    {(activeGame.metacritic || activeGame.rawgPlaytime) && (
                         <div className="grid grid-cols-2 gap-3">
-                            {game.metacritic && (
+                            {activeGame.metacritic && (
                                 <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
                                     <Award className="h-5 w-5 text-green-500" />
                                     <div>
-                                        <div className="text-lg font-bold text-foreground">{game.metacritic}</div>
+                                        <div className="text-lg font-bold text-foreground">{activeGame.metacritic}</div>
                                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.metacritic')}</div>
                                     </div>
                                 </div>
                             )}
-                            {game.rawgPlaytime && !game.hltbMainStory && (
-                                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
-                                    <Clock className="h-5 w-5 text-blue-400" />
-                                    <div>
-                                        <div className="text-lg font-bold text-foreground">{game.rawgPlaytime}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.avgPlaytime')}</div>
-                                    </div>
-                                </div>
-                            )}
+
                         </div>
                     )}
 
                     {/* Description */}
-                    {game.description && (
+                    {activeGame.description && (
                         <div className="space-y-2">
                             <label className="text-sm font-medium leading-none flex items-center gap-2">
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 {t('gameDetails.description')}
                             </label>
                             <div className="bg-muted/30 rounded-lg p-3 text-sm text-muted-foreground max-h-32 overflow-y-auto">
-                                {game.description.length > 500
-                                    ? game.description.substring(0, 500) + "..."
-                                    : game.description}
+                                {activeGame.description.length > 500
+                                    ? activeGame.description.substring(0, 500) + "..."
+                                    : activeGame.description}
                             </div>
                         </div>
                     )}
@@ -336,7 +337,7 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
 
                         <div className="flex flex-wrap gap-2">
                             {collections?.map(collection => {
-                                const isIncluded = collection.gameIds.includes(game.id);
+                                const isIncluded = collection.gameIds.includes(activeGame.id);
                                 return (
                                     <Badge
                                         key={collection.id}
@@ -410,7 +411,7 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => {
-                                    onDeleteGame(game.id);
+                                    onDeleteGame(activeGame.id);
                                     toast.success("Jogo deletado");
                                     onOpenChange(false);
                                 }}

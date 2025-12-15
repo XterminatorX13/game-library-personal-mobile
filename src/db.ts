@@ -23,7 +23,6 @@ export interface Game {
   // RAWG extended data (optional)
   description?: string;        // Game description
   metacritic?: number | null;  // Metacritic score 0-100
-  metacritic?: number | null;  // Metacritic score 0-100
   rawgPlaytime?: number;       // Average playtime (fallback for HLTB)
   rawgId?: number;             // Original RAWG ID for future lookups/enrichment
 }
@@ -59,12 +58,14 @@ export class GameVaultDB extends Dexie {
     // Version 2: Added collections table
     this.version(2).stores({
       games: 'id, title, platform, status, addedAt',
-      collections: 'id, name, createdAt, isAuto'
+      collections: 'id, name, createdAt, isAuto',
+      deleted_games: 'id, deletedAt' // New table for sync deletion queue
     });
     // Version 3: Added sync fields (updatedAt)
     this.version(3).stores({
       games: 'id, title, platform, status, addedAt, updatedAt',
-      collections: 'id, name, createdAt, updatedAt, isAuto'
+      collections: 'id, name, createdAt, updatedAt, isAuto',
+      deleted_games: 'id, deletedAt' // Ensure it exists in v3 too
     }).upgrade(tx => {
       // Populate updatedAt with addedAt/createdAt for existing items
       tx.table('games').toCollection().modify(game => {

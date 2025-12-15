@@ -101,6 +101,9 @@ const Index = () => {
       // 1. Delete the game itself
       await db.games.delete(gameId);
 
+      // 1.5 Add to deletion queue for Sync
+      await db.table('deleted_games').add({ id: gameId, deletedAt: Date.now() });
+
       // 2. Cascade delete: Remove this game ID from all collections
       const collections = await db.collections.toArray();
       const collectionsUpdates = collections

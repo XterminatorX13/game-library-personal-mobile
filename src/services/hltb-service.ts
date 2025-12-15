@@ -26,7 +26,7 @@ const checkLocalhost = async (): Promise<boolean> => {
     try {
         const response = await fetch("http://localhost:3001/", {
             method: 'GET',
-            signal: AbortSignal.timeout(300)
+            signal: AbortSignal.timeout(1000) // Increased from 300ms to 1s
         });
         useLocalhost = response.ok;
     } catch {
@@ -46,9 +46,14 @@ export const HltbService = {
         if (!gameName || gameName.length < 2) return null;
 
         try {
-            // Use localhost if available (dev), otherwise Vercel Edge
+            // Use Custom Env URL > Localhost > Cloudflare
             const isLocal = await checkLocalhost();
-            const apiUrl = isLocal ? LOCAL_API_URL : CLOUDFLARE_API_URL;
+            let apiUrl = isLocal ? LOCAL_API_URL : CLOUDFLARE_API_URL;
+
+            // Allow override via .env (e.g. for Railway)
+            if (import.meta.env.VITE_HLTB_API_URL) {
+                apiUrl = import.meta.env.VITE_HLTB_API_URL;
+            }
 
             const response = await fetch(
                 `${apiUrl}?game=${encodeURIComponent(gameName)}`
