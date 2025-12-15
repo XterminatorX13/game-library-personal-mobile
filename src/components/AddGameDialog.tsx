@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Plus, Loader2, Gamepad2, Clock } from "lucide-react";
+import { Search, Plus, Loader2, Gamepad2 } from "lucide-react";
 import { RawgService, RawgGame } from "@/services/rawg-service";
 import { SteamGridService } from "@/services/steamgrid-service";
 import { HltbService, HltbResult } from "@/services/hltb-service";
@@ -18,7 +18,6 @@ import { optimizeImageUrl } from "@/lib/imageOptimizer";
 
 type EnrichedGame = RawgGame & {
     highQualityCover?: string;
-    hltb?: HltbResult | null;
 };
 
 type AddGameDialogProps = {
@@ -168,8 +167,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                     {results.map((game) => (
                                         <div
                                             key={game.id}
-                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors cursor-pointer group"
-                                            onClick={() => handleAdd(game)}
+                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors group"
                                         >
                                             <img
                                                 src={game.highQualityCover || game.background_image || ""}
@@ -186,12 +184,6 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                                     </span>
                                                     {game.rating > 0 && (
                                                         <span className="flex items-center text-yellow-500">★ {game.rating}</span>
-                                                    )}
-                                                    {game.hltb?.mainStory && (
-                                                        <span className="flex items-center gap-1 text-blue-400" title="HowLongToBeat - Main Story">
-                                                            <Clock className="h-3 w-3" />
-                                                            {game.hltb.mainStory}h
-                                                        </span>
                                                     )}
                                                 </div>
                                                 {/* Platform badges */}
@@ -211,7 +203,15 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                                     </div>
                                                 )}
                                             </div>
-                                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleAdd(game)}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleAdd(game);
+                                                }}
+                                            >
                                                 <Plus className="h-4 w-4" />
                                             </Button>
                                         </div>
