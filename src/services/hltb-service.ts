@@ -13,29 +13,8 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// API URLs: Cloudflare Worker (production) with localhost fallback (dev)
-const CLOUDFLARE_API_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
-const LOCAL_API_URL = "http://localhost:3001/api/hltb";
-
-// Cache localhost availability check
-let useLocalhost: boolean | null = null;
-
-const checkLocalhost = async (): Promise<boolean> => {
-    if (useLocalhost !== null) return useLocalhost;
-
-    try {
-        const response = await fetch("http://localhost:3001/", {
-            method: 'GET',
-            signal: AbortSignal.timeout(1000) // Increased from 300ms to 1s
-        });
-        useLocalhost = response.ok;
-    } catch {
-        useLocalhost = false;
-    }
-
-    console.log('[HLTB] Using', useLocalhost ? 'localhost:3001' : 'Cloudflare Worker');
-    return useLocalhost;
-};
+// API URL: Vercel Edge Function (same-origin, no CORS issues)
+const EDGE_FUNCTION_URL = "/api/hltb";
 
 export const HltbService = {
     /**
@@ -46,14 +25,8 @@ export const HltbService = {
         if (!gameName || gameName.length < 2) return null;
 
         try {
-            // Use Custom Env URL > Localhost > Cloudflare
-            const isLocal = await checkLocalhost();
-            let apiUrl = isLocal ? LOCAL_API_URL : CLOUDFLARE_API_URL;
-
-            // Allow override via .env (e.g. for Railway)
-            if (import.meta.env.VITE_HLTB_API_URL) {
-                apiUrl = import.meta.env.VITE_HLTB_API_URL;
-            }
+            // Use Vercel Edge Function (deployed with the app)
+            const apiUrl = EDGE_FUNCTION_URL;
 
             // ⏱️ 5 SECOND TIMEOUT - Don't wait forever
             const controller = new AbortController();
