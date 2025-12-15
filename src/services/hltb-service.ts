@@ -14,29 +14,40 @@ export interface HltbResult {
 }
 
 // API URLs Priority (tries everything):
-// 1. /api/hltb (Vercel Edge Function - same origin, fast)
-// 2. Cloudflare Worker (has POST + Scraping + Search Engines)
+// 1. Railway Python API (howlongtobeatpy HTML scraping - WORKS!)
+// 2. Vercel Edge Function (POST to HLTB API)
+// 3. Cloudflare Worker (POST + Scraping + Search Engines)
+const RAILWAY_API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
 const EDGE_FUNCTION_URL = "/api/hltb";
 const CLOUDFLARE_WORKER_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
 
 export const HltbService = {
     /**
      * ULTIMATE HLTB Search - tries EVERYTHING
-     * 1. Vercel Edge Function (fast, same-origin)
-     * 2. Cloudflare Worker (POST + Scraping + DDG/Bing/Google)
+     * 1. Railway Python API (howlongtobeatpy HTML scraping - WORKS!)
+     * 2. Vercel Edge Function (POST to HLTB API)
+     * 3. Cloudflare Worker (POST + Scraping + Search Engines)
      * 100% OPTIONAL - silently fails without blocking the app
      */
     async searchGame(gameName: string): Promise<HltbResult | null> {
         if (!gameName || gameName.length < 2) return null;
 
-        // Try Edge Function first (fast, same domain)
+        // Try Railway API first (Python + howlongtobeatpy HTML scraping - WORKS!)
+        const railwayResult = await this._trySource(RAILWAY_API_URL, gameName, 5000);
+        if (railwayResult) {
+            console.debug(`[HLTB] ✅ Success via Railway Python API`);
+            return railwayResult;
+        }
+
+        // Fallback: Edge Function (POST to HLTB API)
+        console.warn(`[HLTB] Railway failed, trying Edge Function...`);
         const edgeResult = await this._trySource(EDGE_FUNCTION_URL, gameName, 3000);
         if (edgeResult) {
             console.debug(`[HLTB] ✅ Success via Edge Function`);
             return edgeResult;
         }
 
-        // Fallback: Cloudflare Worker (more robust, tries scraping)
+        // Last resort: Cloudflare Worker
         console.warn(`[HLTB] Edge Function failed, trying Cloudflare Worker...`);
         const workerResult = await this._trySource(CLOUDFLARE_WORKER_URL, gameName, 5000);
         if (workerResult) {
