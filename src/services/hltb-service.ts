@@ -17,7 +17,7 @@ export interface HltbResult {
 // 1. Railway Python API (howlongtobeatpy HTML scraping - WORKS!)
 // 2. Vercel Edge Function (POST to HLTB API)
 // 3. Cloudflare Worker (POST + Scraping + Search Engines)
-const RAILWAY_API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
+const RAILWAY_API_URL = "https://hltb-api-production.up.railway.app/api/hltb";
 const EDGE_FUNCTION_URL = "/api/hltb";
 const CLOUDFLARE_WORKER_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
 
