@@ -42,6 +42,19 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
                 if (!existingGame) {
                     // Add to library first
                     await db.games.add(game);
+
+                    // 🚀 Fetch HLTB in background (non-blocking)
+                    import("@/services/hltb-service").then(async ({ HltbService }) => {
+                        const hltbData = await HltbService.searchGame(game.title);
+                        if (hltbData) {
+                            await db.games.update(game.id, {
+                                hltbMainStory: hltbData.mainStory ?? undefined,
+                                hltbMainExtra: hltbData.mainExtra ?? undefined,
+                                hltbCompletionist: hltbData.completionist ?? undefined,
+                                hltbUrl: hltbData.gameUrl ?? undefined,
+                            });
+                        }
+                    }).catch(err => console.error("HLTB fetch failed:", err));
                 }
             }
 
@@ -68,6 +81,19 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
             const existingGame = await db.games.get(game.id);
             if (!existingGame) {
                 await db.games.add(game);
+
+                // 🚀 Fetch HLTB in background (non-blocking)
+                import("@/services/hltb-service").then(async ({ HltbService }) => {
+                    const hltbData = await HltbService.searchGame(game.title);
+                    if (hltbData) {
+                        await db.games.update(game.id, {
+                            hltbMainStory: hltbData.mainStory ?? undefined,
+                            hltbMainExtra: hltbData.mainExtra ?? undefined,
+                            hltbCompletionist: hltbData.completionist ?? undefined,
+                            hltbUrl: hltbData.gameUrl ?? undefined,
+                        });
+                    }
+                }).catch(err => console.error("HLTB fetch failed:", err));
             }
 
             await db.collections.add({

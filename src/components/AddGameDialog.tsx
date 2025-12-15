@@ -30,7 +30,7 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [isSearching, setIsSearching] = useState(false);
-    const [isAdding, setIsAdding] = useState(false);
+    const [addingGameId, setAddingGameId] = useState<number | null>(null);
     const [results, setResults] = useState<EnrichedGame[]>([]);
 
     const handleSearch = async (term: string) => {
@@ -78,64 +78,69 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     };
 
     const handleAdd = async (game: EnrichedGame) => {
-        if (isAdding) return; // Prevent duplicate adds
+        if (addingGameId) return; // Prevent duplicate adds
 
-        setIsAdding(true);
-        try {
-            // CRITICAL: Optimize cover URL BEFORE saving to database
-            // This prevents caching 8MB raw PNGs from SteamGridDB
-            const rawCoverUrl = game.highQualityCover || game.background_image || "";
+        setAddingGameId(game.id);
 
-            // Force optimization via weserv.nl (saves bandwidth + storage)
-            const optimizedCover = rawCoverUrl
-                ? optimizeImageUrl(rawCoverUrl, {
-                    width: 400,
-                    quality: 75, // Balanced quality (was 100)
-                    output: 'webp'
-                })
-                : ""; // No placeholder - empty if no cover
+        // ⚡ OPTIMISTIC UPDATE: Close dialog immediately for better UX
+        const rawCoverUrl = game.highQualityCover || game.background_image || "";
+        const optimizedCover = rawCoverUrl
+            ? optimizeImageUrl(rawCoverUrl, {
+                width: 400,
+                quality: 75,
+                output: 'webp'
+            })
+            : "";
 
-            // Fetch RAWG extended details + HLTB times (only when adding)
-            const [rawgDetails, hltbData] = await Promise.all([
-                RawgService.getGameDetails(game.id),
-                HltbService.searchGame(game.name),
-            ]);
+        // Create minimal game object with existing data
+        const minimumGame = {
+            id: game.id.toString(),
+            title: game.name,
+            platform: game.platforms?.[0]?.platform?.name || "PC",
+            store: "manual",
+            status: "backlog",
+            hoursPlayed: 0,
+            cover: optimizedCover,
+            tags: game.genres?.map(g => g.name).slice(0, 3) || [],
+            rating: game.rating || 0,
+            releaseYear: game.released?.split("-")[0] || undefined,
+        };
 
-            const newGame = {
-                id: game.id.toString(),
-                title: game.name,
-                platform: game.platforms?.[0]?.platform?.name || "PC",
-                store: "manual",
-                status: "backlog",
-                hoursPlayed: 0,
-                cover: optimizedCover, // ✅ Pre-optimized URL (or empty)
-                tags: game.genres?.map(g => g.name).slice(0, 3) || [],
-                rating: game.rating || 0,
-                releaseYear: game.released?.split("-")[0] || undefined,
-                // HLTB data (fetched in parallel above)
+        // Add immediately with basic data
+        onAddGame(minimumGame);
+
+        // Show success toast and close modal INSTANTLY
+        toast.success(`${game.name} adicionado à biblioteca!`, {
+            description: "Buscando detalhes...",
+        });
+        setOpen(false);
+        setSearchTerm("");
+        setResults([]);
+        setAddingGameId(null);
+
+        // 🚀 Fetch extended data in background (non-blocking)
+        Promise.all([
+            RawgService.getGameDetails(game.id),
+            HltbService.searchGame(game.name),
+        ]).then(([rawgDetails, hltbData]) => {
+            // Update game with full details
+            const enrichedGame = {
+                ...minimumGame,
                 hltbMainStory: hltbData?.mainStory ?? undefined,
                 hltbMainExtra: hltbData?.mainExtra ?? undefined,
                 hltbCompletionist: hltbData?.completionist ?? undefined,
                 hltbUrl: hltbData?.gameUrl ?? undefined,
-                // RAWG extended data
                 description: rawgDetails?.description_raw ?? undefined,
                 metacritic: rawgDetails?.metacritic ?? undefined,
                 rawgPlaytime: rawgDetails?.playtime ?? undefined,
             };
 
-            onAddGame(newGame);
-            toast.success(`${game.name} adicionado à biblioteca!`, {
-                description: hltbData?.mainStory ? `${hltbData.mainStory}h para completar` : undefined,
-            });
-            setOpen(false);
-            setSearchTerm("");
-            setResults([]);
-        } catch (error) {
-            console.error('Error adding game:', error);
-            toast.error('Erro ao adicionar jogo');
-        } finally {
-            setIsAdding(false);
-        }
+            // Update in IndexedDB silently
+            onAddGame(enrichedGame);
+        }).catch(error => {
+            console.error('Background enrichment failed:', error);
+            // Game already added with basic data, so no user-facing error
+        });
     };
 
 
@@ -226,9 +231,9 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                                                     e.stopPropagation();
                                                     handleAdd(game);
                                                 }}
-                                                disabled={isAdding}
+                                                disabled={addingGameId === game.id}
                                             >
-                                                {isAdding ? (
+                                                {addingGameId === game.id ? (
                                                     <Loader2 className="h-4 w-4 animate-spin" />
                                                 ) : (
                                                     <Plus className="h-4 w-4" />

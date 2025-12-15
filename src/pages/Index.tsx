@@ -79,9 +79,10 @@ const Index = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleAddGame = async (newGame: any) => {
-    await db.games.add({
+    // Use put() instead of add() to allow upsert (optimistic UI updates same game twice)
+    await db.games.put({
       ...newGame,
-      addedAt: Date.now(),
+      addedAt: newGame.addedAt || Date.now(),
     });
   };
 

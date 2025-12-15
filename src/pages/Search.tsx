@@ -75,8 +75,29 @@ export function Search() {
                 addedAt: Date.now(),
             };
 
-            await db.games.add(newGame);
-            toast.success(`"${result.name}" adicionado à biblioteca!`);
+            // ⚡ Add immediately with basic data
+            await db.games.put(newGame);
+            toast.success(`"${result.name}" adicionado!`, {
+                description: "Buscando HLTB...",
+            });
+
+            // 🚀 Fetch HLTB in background (non-blocking)
+            Promise.all([
+                RawgService.getGameDetails(result.id),
+                import("@/services/hltb-service").then(m => m.HltbService.searchGame(result.name)),
+            ]).then(async ([rawgDetails, hltbData]) => {
+                const enrichedGame = {
+                    ...newGame,
+                    hltbMainStory: hltbData?.mainStory ?? undefined,
+                    hltbMainExtra: hltbData?.mainExtra ?? undefined,
+                    hltbCompletionist: hltbData?.completionist ?? undefined,
+                    hltbUrl: hltbData?.gameUrl ?? undefined,
+                    description: rawgDetails?.description_raw ?? undefined,
+                    metacritic: rawgDetails?.metacritic ?? undefined,
+                };
+                await db.games.put(enrichedGame);
+            }).catch(err => console.error("Background enrichment failed:", err));
+
         } catch (error) {
             console.error(error);
             toast.error("Erro ao adicionar jogo");
@@ -190,7 +211,7 @@ export function Search() {
                     </div>
                 ) : results.length > 0 ? (
                     <div className={`grid gap-3 ${viewMode === 'list' ? 'grid-cols-1' :
-                            'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                        'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
                         }`}>
                         {results.map((result) => {
                             // LIST VIEW - Compact Horizontal

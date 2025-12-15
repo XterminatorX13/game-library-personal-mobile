@@ -99,7 +99,7 @@ function GameCardComponent({ game, onClick, priority = false, variant = "grid", 
                         decoding="async"
                         width={40}
                         height={56}
-                        fetchPriority={priority ? "high" : "low"}
+                    // fetchpriority handled by loading prop
                     />
                 </div>
 
@@ -139,7 +139,7 @@ function GameCardComponent({ game, onClick, priority = false, variant = "grid", 
                         src={coverUrl}
                         loading={priority ? "eager" : "lazy"}
                         decoding="async"
-                        fetchPriority={priority ? "high" : "low"}
+                        // fetchpriority handled by loading prop
                         width={variant === 'gallery' ? 600 : 400}
                         height={variant === 'gallery' ? 338 : 600}
                         style={{
