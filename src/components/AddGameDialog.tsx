@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Plus, Loader2, Gamepad2 } from "lucide-react";
+import { Search, Plus, Loader2, Gamepad2, Check } from "lucide-react";
 import { RawgService, RawgGame } from "@/services/rawg-service";
 import { SteamGridService } from "@/services/steamgrid-service";
 import { HltbService, HltbResult } from "@/services/hltb-service";
@@ -118,6 +118,10 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
         setResults([]);
         setAddingGameId(null);
 
+
+
+        // ... existing code ...
+
         // 🚀 Fetch extended data in background (non-blocking)
         Promise.all([
             RawgService.getGameDetails(game.id),
@@ -137,6 +141,12 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
 
             // Update in IndexedDB silently
             onAddGame(enrichedGame);
+
+            // Show HLTB Success Modal if data found
+            if (hltbData && (hltbData.mainStory || hltbData.mainExtra || hltbData.completionist)) {
+                setHltbResult(hltbData);
+                setShowHltbSuccess(true);
+            }
         }).catch(error => {
             console.error('Background enrichment failed:', error);
             // Game already added with basic data, so no user-facing error
@@ -144,125 +154,170 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
     };
 
 
+    const [hltbResult, setHltbResult] = useState<HltbResult | null>(null);
+    const [showHltbSuccess, setShowHltbSuccess] = useState(false);
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger ? (
-                    trigger
-                ) : (
-                    <Button size="sm" className="rounded-full text-xs font-semibold gap-2">
-                        <Plus className="h-3.5 w-3.5" />
-                        Adicionar jogo
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background border-border">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>Adicionar à Biblioteca</DialogTitle>
-                    <DialogDescription>
-                        Busque e adicione jogos à sua biblioteca pessoal.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                    {trigger ? (
+                        trigger
+                    ) : (
+                        <Button size="sm" className="rounded-full text-xs font-semibold gap-2">
+                            <Plus className="h-3.5 w-3.5" />
+                            Adicionar jogo
+                        </Button>
+                    )}
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background border-border">
+                    <DialogHeader className="p-6 pb-2">
+                        <DialogTitle>Adicionar à Biblioteca</DialogTitle>
+                        <DialogDescription>
+                            Busque e adicione jogos à sua biblioteca pessoal.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                <div className="p-6 pt-2 space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                            placeholder="Buscar por nome (ex: Elden Ring, Zelda, Celeste)..."
-                            value={searchTerm}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className="pl-9 bg-secondary/50 border-border"
-                        />
-                    </div>
+                    <div className="p-6 pt-2 space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                                placeholder="Buscar por nome (ex: Elden Ring, Zelda, Celeste)..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="pl-9 bg-secondary/50 border-border"
+                            />
+                        </div>
 
-                    <div className="min-h-[350px] mt-2 border rounded-md bg-card/50">
-                        {isSearching ? (
-                            <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground gap-2">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-xs">Buscando capas HD...</p>
-                            </div>
-                        ) : results.length > 0 ? (
-                            <ScrollArea className="h-[350px] p-2">
-                                <div className="space-y-2">
-                                    {results.map((game) => (
-                                        <div
-                                            key={game.id}
-                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors group"
-                                        >
-                                            <img
-                                                src={game.highQualityCover || game.background_image || ""}
-                                                alt={game.name}
-                                                className="h-20 w-14 object-cover rounded-md shadow-sm bg-muted"
-                                                width={56}
-                                                height={80}
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-semibold text-sm truncate text-foreground">{game.name}</h4>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
-                                                    <span className="bg-secondary px-1.5 py-0.5 rounded text-[10px] uppercase text-secondary-foreground">
-                                                        {game.released?.split("-")[0] || "N/A"}
-                                                    </span>
-                                                    {game.rating > 0 && (
-                                                        <span className="flex items-center text-yellow-500">★ {game.rating}</span>
-                                                    )}
-                                                </div>
-                                                {/* Platform badges */}
-                                                {game.platforms && game.platforms.length > 0 && (
-                                                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                                                        {game.platforms.slice(0, 3).map((p, idx) => (
-                                                            <span
-                                                                key={idx}
-                                                                className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[9px] font-medium uppercase border border-primary/20"
-                                                            >
-                                                                {p.platform.name}
-                                                            </span>
-                                                        ))}
-                                                        {game.platforms.length > 3 && (
-                                                            <span className="text-[9px] text-muted-foreground">+{game.platforms.length - 3}</span>
+                        <div className="min-h-[350px] mt-2 border rounded-md bg-card/50">
+                            {isSearching ? (
+                                <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground gap-2">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <p className="text-xs">Buscando capas HD...</p>
+                                </div>
+                            ) : results.length > 0 ? (
+                                <ScrollArea className="h-[350px] p-2">
+                                    <div className="space-y-2">
+                                        {results.map((game) => (
+                                            <div
+                                                key={game.id}
+                                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors group"
+                                            >
+                                                <img
+                                                    src={game.highQualityCover || game.background_image || ""}
+                                                    alt={game.name}
+                                                    className="h-20 w-14 object-cover rounded-md shadow-sm bg-muted"
+                                                    width={56}
+                                                    height={80}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-sm truncate text-foreground">{game.name}</h4>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                                                        <span className="bg-secondary px-1.5 py-0.5 rounded text-[10px] uppercase text-secondary-foreground">
+                                                            {game.released?.split("-")[0] || "N/A"}
+                                                        </span>
+                                                        {game.rating > 0 && (
+                                                            <span className="flex items-center text-yellow-500">★ {game.rating}</span>
                                                         )}
                                                     </div>
-                                                )}
+                                                    {/* Platform badges */}
+                                                    {game.platforms && game.platforms.length > 0 && (
+                                                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                                            {game.platforms.slice(0, 3).map((p, idx) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[9px] font-medium uppercase border border-primary/20"
+                                                                >
+                                                                    {p.platform.name}
+                                                                </span>
+                                                            ))}
+                                                            {game.platforms.length > 3 && (
+                                                                <span className="text-[9px] text-muted-foreground">+{game.platforms.length - 3}</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAdd(game);
+                                                    }}
+                                                    disabled={addingGameId === game.id}
+                                                >
+                                                    {addingGameId === game.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Plus className="h-4 w-4" />
+                                                    )}
+                                                </Button>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleAdd(game);
-                                                }}
-                                                disabled={addingGameId === game.id}
-                                            >
-                                                {addingGameId === game.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Plus className="h-4 w-4" />
-                                                )}
-                                            </Button>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            ) : searchTerm.length > 0 ? (
+                                <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground text-center">
+                                    <Gamepad2 className="h-12 w-12 mb-2 opacity-20" />
+                                    <p>Nenhum jogo encontrado.</p>
                                 </div>
-                            </ScrollArea>
-                        ) : searchTerm.length > 0 ? (
-                            <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground text-center">
-                                <Gamepad2 className="h-12 w-12 mb-2 opacity-20" />
-                                <p>Nenhum jogo encontrado.</p>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground text-center px-8">
+                                    <div className="grid grid-cols-3 gap-4 mb-4 opacity-30">
+                                        <div className="h-20 w-14 bg-muted rounded-md" />
+                                        <div className="h-20 w-14 bg-muted rounded-md" />
+                                        <div className="h-20 w-14 bg-muted rounded-md" />
+                                    </div>
+                                    <p className="text-sm">Digite o nome do jogo para buscar capas HD e ratings automaticamente.</p>
+                                    <div className="flex items-center gap-2 mt-3 text-xs opacity-60">
+                                        <span>Powered by RAWG · SteamGridDB · HLTB</span>
+                                    </div>                    </div>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* HLTB Success Dialog */}
+            {showHltbSuccess && hltbResult && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-background rounded-xl border border-primary/20 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center space-y-4">
+                            <div className="mx-auto w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
+                                <Check className="h-6 w-6 text-green-500" />
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground text-center px-8">
-                                <div className="grid grid-cols-3 gap-4 mb-4 opacity-30">
-                                    <div className="h-20 w-14 bg-muted rounded-md" />
-                                    <div className="h-20 w-14 bg-muted rounded-md" />
-                                    <div className="h-20 w-14 bg-muted rounded-md" />
+
+                            <h2 className="text-xl font-bold text-foreground">Dados HLTB Encontrados!</h2>
+                            <p className="text-sm text-muted-foreground">
+                                Encontramos os tempos de jogo para <span className="font-medium text-foreground">"{hltbResult.gameName}"</span>:
+                            </p>
+
+                            <div className="grid grid-cols-3 gap-3 pt-2">
+                                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                    <div className="text-xl font-bold text-foreground">{hltbResult.mainStory}h</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Main</div>
                                 </div>
-                                <p className="text-sm">Digite o nome do jogo para buscar capas HD e ratings automaticamente.</p>
-                                <div className="flex items-center gap-2 mt-3 text-xs opacity-60">
-                                    <span>Powered by RAWG · SteamGridDB · HLTB</span>
-                                </div>                    </div>
-                        )}
+                                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                    <div className="text-xl font-bold text-foreground">{hltbResult.mainExtra}h</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Extra</div>
+                                </div>
+                                <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                    <div className="text-xl font-bold text-foreground">{hltbResult.completionist}h</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">100%</div>
+                                </div>
+                            </div>
+
+                            <Button
+                                className="w-full mt-4"
+                                onClick={() => setShowHltbSuccess(false)}
+                            >
+                                Maravilha!
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            )}
+        </>
     );
 }
