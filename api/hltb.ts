@@ -3,6 +3,8 @@
  * Bypasses CORS by making server-side requests to HowLongToBeat
  * 
  * Usage: GET /api/hltb?game=Elden+Ring
+ * 
+ * v2.0.0 - Added full browser fingerprint headers to bypass 403
  */
 
 export const config = {
@@ -71,18 +73,32 @@ export default async function handler(request: Request) {
     }
 
     try {
+        // Full browser fingerprint headers to bypass 403
         const response = await fetch(HLTB_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
                 'Origin': 'https://howlongtobeat.com',
                 'Referer': 'https://howlongtobeat.com/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Windows"',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
             },
             body: JSON.stringify(buildPayload(gameName)),
         });
 
         if (!response.ok) {
+            console.error('[HLTB] Request failed:', response.status, response.statusText);
             return new Response(
                 JSON.stringify({ error: 'HLTB request failed', status: response.status }),
                 { status: 502, headers }
