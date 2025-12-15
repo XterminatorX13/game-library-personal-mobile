@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { QuickAddDrawer } from "@/components/QuickAddDrawer";
+import { HltbSuccessDialog } from "@/components/HltbSuccessDialog";
 import { RawgService } from "@/services/rawg-service";
+import { SteamGridService } from "@/services/steamgrid-service";
+import { HltbService, HltbResult } from "@/services/hltb-service";
 import { db, Game } from "@/db";
 import { toast } from "sonner";
 import { generateUUID } from "@/lib/uuid";
@@ -21,6 +24,9 @@ interface SearchResult {
     background_image: string;
     platforms?: { platform: { name: string } }[];
     released?: string;
+    rating?: number;
+    genres?: { name: string }[];
+    highQualityCover?: string; // Added for SteamGrid enrichment
 }
 
 export function Search() {
@@ -29,6 +35,10 @@ export function Search() {
     const [isSearching, setIsSearching] = useState(false);
     const [quickAddGame, setQuickAddGame] = useState<Game | null>(null);
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+
+    // HLTB Success Modal State
+    const [hltbResult, setHltbResult] = useState<HltbResult | null>(null);
+    const [showHltbSuccess, setShowHltbSuccess] = useState(false);
 
     // View Mode State with Persistence
     const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -47,8 +57,31 @@ export function Search() {
 
         setIsSearching(true);
         try {
-            const games = await RawgService.searchGames(query);
-            setResults(games);
+            // 1. Get game metadata from RAWG
+            const rawgGames = await RawgService.searchGames(query);
+
+            // 2. Enrich with SteamGridDB covers (same as AddGameDialog)
+            const enrichedGames = await Promise.all(
+                rawgGames.slice(0, 12).map(async (game) => {
+                    try {
+                        const steamGridResults = await SteamGridService.searchGame(game.name);
+                        let highQualityCover = null;
+                        if (steamGridResults.length > 0) {
+                            const gameId = steamGridResults[0].id;
+                            highQualityCover = await SteamGridService.getGrids(gameId);
+                        }
+                        return {
+                            ...game,
+                            highQualityCover,
+                        };
+                    } catch (error) {
+                        console.error(`Error enriching game ${game.name}:`, error);
+                        return game;
+                    }
+                })
+            );
+
+            setResults(enrichedGames);
         } catch (error) {
             console.error(error);
             toast.error("Erro ao buscar jogos");
@@ -57,12 +90,21 @@ export function Search() {
         }
     };
 
-
-
-    const handleQuickAdd = (result: SearchResult) => {
-        const platformName = result.platforms?.[0]?.platform?.name || "Unknown";
+    const handleQuickAdd = async (result: SearchResult) => {
+        const platformName = result.platforms?.[0]?.platform?.name || "PC";
         const year = result.released?.split("-")[0] || "";
 
+        // Use high-quality cover if available (from SteamGrid), fallback to RAWG
+        const rawCoverUrl = result.highQualityCover || result.background_image || "";
+        const optimizedCover = rawCoverUrl
+            ? optimizeImageUrl(rawCoverUrl, {
+                width: 400,
+                quality: 75,
+                output: 'webp'
+            })
+            : "";
+
+        // Create game with basic data (same structure as AddGameDialog)
         const tempGame: Game = {
             id: generateUUID(),
             title: result.name,
@@ -70,15 +112,43 @@ export function Search() {
             store: "RAWG",
             status: "backlog",
             hoursPlayed: 0,
-            cover: result.background_image ? optimizeImageUrl(result.background_image) : "",
-            tags: [],
+            cover: optimizedCover,
+            tags: result.genres?.map(g => g.name).slice(0, 3) || [],
+            rating: result.rating || 0,
             releaseYear: year,
-            rawgId: result.id, // Store RAWG ID for enrichment
+            rawgId: result.id,
             addedAt: Date.now(),
         };
 
         setQuickAddGame(tempGame);
         setIsQuickAddOpen(true);
+
+        // 🚀 Fetch HLTB + Extended RAWG data in background (same as AddGameDialog)
+        Promise.all([
+            RawgService.getGameDetails(result.id),
+            HltbService.searchGame(result.name),
+        ]).then(([rawgDetails, hltbData]) => {
+            const enrichedGame = {
+                ...tempGame,
+                hltbMainStory: hltbData?.mainStory ?? undefined,
+                hltbMainExtra: hltbData?.mainExtra ?? undefined,
+                hltbCompletionist: hltbData?.completionist ?? undefined,
+                hltbUrl: hltbData?.gameUrl ?? undefined,
+                description: rawgDetails?.description_raw ?? undefined,
+                metacritic: rawgDetails?.metacritic ?? undefined,
+            };
+
+            // Update the game object in state
+            setQuickAddGame(enrichedGame);
+
+            // Show HLTB Success Modal if data found
+            if (hltbData && (hltbData.mainStory || hltbData.mainExtra || hltbData.completionist)) {
+                setHltbResult(hltbData);
+                setShowHltbSuccess(true);
+            }
+        }).catch(error => {
+            console.error('Background enrichment failed:', error);
+        });
     };
 
     return (
@@ -177,10 +247,10 @@ export function Search() {
                                         key={result.id}
                                         className="group flex items-center gap-3 p-2.5 rounded-xl bg-card/50 hover:bg-card border border-border/40 transition-all hover:shadow-md"
                                     >
-                                        {/* Tiny Cover */}
-                                        {result.background_image ? (
+                                        {/* Tiny Cover - Use SteamGrid if available */}
+                                        {(result.highQualityCover || result.background_image) ? (
                                             <img
-                                                src={optimizeImageUrl(result.background_image, { width: 64 })}
+                                                src={optimizeImageUrl(result.highQualityCover || result.background_image, { width: 64 })}
                                                 alt={result.name}
                                                 className="w-12 h-16 object-cover rounded-md shrink-0"
                                             />
@@ -226,11 +296,11 @@ export function Search() {
                                     key={result.id}
                                     className="group relative overflow-hidden rounded-xl bg-card border border-border/40 hover:shadow-xl transition-all duration-300"
                                 >
-                                    {/* Cover Image */}
+                                    {/* Cover Image - Use SteamGrid if available */}
                                     <div className="relative overflow-hidden aspect-[2/3]">
-                                        {result.background_image ? (
+                                        {(result.highQualityCover || result.background_image) ? (
                                             <img
-                                                src={optimizeImageUrl(result.background_image, { width: 400 })}
+                                                src={optimizeImageUrl(result.highQualityCover || result.background_image, { width: 400 })}
                                                 alt={result.name}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
@@ -292,6 +362,13 @@ export function Search() {
                 game={quickAddGame}
                 open={isQuickAddOpen}
                 onOpenChange={setIsQuickAddOpen}
+            />
+
+            {/* HLTB Success Dialog */}
+            <HltbSuccessDialog
+                open={showHltbSuccess}
+                onOpenChange={setShowHltbSuccess}
+                data={hltbResult}
             />
         </div>
     );
