@@ -256,19 +256,22 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                                 {game.hltbMainStory && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbMainStory}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbMainStory')}</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbMainStory / 24).toFixed(1)} dias</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbMainStory')}</div>
                                     </div>
                                 )}
                                 {game.hltbMainExtra && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbMainExtra}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbMainExtra')}</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbMainExtra / 24).toFixed(1)} dias</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbMainExtra')}</div>
                                     </div>
                                 )}
                                 {game.hltbCompletionist && (
                                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                                         <div className="text-lg font-bold text-foreground">{game.hltbCompletionist}h</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.hltbCompletionist')}</div>
+                                        <div className="text-[9px] text-muted-foreground/70">~{(game.hltbCompletionist / 24).toFixed(1)} dias</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">{t('gameDetails.hltbCompletionist')}</div>
                                     </div>
                                 )}
                             </div>
