@@ -1,0 +1,6 @@
+name = "hltb-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+HLTB_API_URL = "https://howlongtobeat.com/api/search"

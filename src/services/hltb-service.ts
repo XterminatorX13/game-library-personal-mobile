@@ -1,6 +1,6 @@
 /**
  * HowLongToBeat Service
- * Uses Vercel Edge Function (primary) with localhost fallback (dev)
+ * Uses Cloudflare Worker (production) with localhost fallback (dev)
  */
 
 export interface HltbResult {
@@ -13,8 +13,8 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// API URLs: Vercel Edge Function (production) with localhost fallback (dev)
-const VERCEL_API_URL = "/api/hltb"; // Same-origin, no CORS issues!
+// API URLs: Cloudflare Worker (production) with localhost fallback (dev)
+const CLOUDFLARE_API_URL = "https://hltb-proxy.impressasismp.workers.dev/api/hltb";
 const LOCAL_API_URL = "http://localhost:3001/api/hltb";
 
 // Cache localhost availability check
@@ -33,7 +33,7 @@ const checkLocalhost = async (): Promise<boolean> => {
         useLocalhost = false;
     }
 
-    console.log('[HLTB] Using', useLocalhost ? 'localhost:3001' : 'Vercel Edge Function');
+    console.log('[HLTB] Using', useLocalhost ? 'localhost:3001' : 'Cloudflare Worker');
     return useLocalhost;
 };
 
@@ -48,7 +48,7 @@ export const HltbService = {
         try {
             // Use localhost if available (dev), otherwise Vercel Edge
             const isLocal = await checkLocalhost();
-            const apiUrl = isLocal ? LOCAL_API_URL : VERCEL_API_URL;
+            const apiUrl = isLocal ? LOCAL_API_URL : CLOUDFLARE_API_URL;
 
             const response = await fetch(
                 `${apiUrl}?game=${encodeURIComponent(gameName)}`
