@@ -40,7 +40,7 @@ const checkLocalhost = async (): Promise<boolean> => {
 export const HltbService = {
     /**
      * Search for a game on HowLongToBeat
-     * Uses Vercel Edge Function (same-origin) or localhost (dev)
+     * 100% OPTIONAL - silently fails without blocking the app
      */
     async searchGame(gameName: string): Promise<HltbResult | null> {
         if (!gameName || gameName.length < 2) return null;
@@ -55,21 +55,27 @@ export const HltbService = {
                 apiUrl = import.meta.env.VITE_HLTB_API_URL;
             }
 
+            // ⏱️ 5 SECOND TIMEOUT - Don't wait forever
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
             const response = await fetch(
-                `${apiUrl}?game=${encodeURIComponent(gameName)}`
+                `${apiUrl}?game=${encodeURIComponent(gameName)}`,
+                { signal: controller.signal }
             );
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                console.warn("[HLTB] API request failed:", response.status);
+                console.warn(`[HLTB] API returned ${response.status} - skipping silently`);
                 return null;
             }
 
             const data = await response.json();
-            console.log("[HLTB] Raw API response for", gameName, ":", data);
 
             // Check for error response
             if (data.error || !data.gameId) {
-                console.debug("[HLTB] No results for:", gameName);
+                console.debug(`[HLTB] No results for: ${gameName} - continuing without HLTB data`);
                 return null;
             }
 
@@ -83,15 +89,20 @@ export const HltbService = {
                 gameUrl: data.gameUrl,
             };
 
-            console.debug("[HLTB] Found:", result.gameName, {
+            console.debug(`[HLTB] ✅ Found: ${result.gameName}`, {
                 main: result.mainStory,
                 extra: result.mainExtra,
                 "100%": result.completionist,
             });
 
             return result;
-        } catch (error) {
-            console.error("[HLTB] Error searching game:", error);
+        } catch (error: any) {
+            // SILENT FAILURE - Don't annoy the user
+            if (error.name === 'AbortError') {
+                console.warn(`[HLTB] Timeout after 5s for "${gameName}" - skipping`);
+            } else {
+                console.warn(`[HLTB] Error (non-critical): ${error.message}`);
+            }
             return null;
         }
     },
