@@ -13,8 +13,8 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// Local FastAPI proxy (bypass CORS)
-const API_URL = "http://localhost:3001/api/hltb";
+// Production FastAPI on Railway (no local server needed!)
+const API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
 
 export const HltbService = {
     /**
@@ -36,6 +36,9 @@ export const HltbService = {
             }
 
             const data = await response.json();
+
+            // DEBUG: Log raw response
+            console.log("[HLTB] Raw API response for", gameName, ":", data);
 
             // Check for error response
             if (data.error || !data.gameId) {

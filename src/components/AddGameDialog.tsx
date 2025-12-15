@@ -44,11 +44,8 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                 const enrichedGames = await Promise.all(
                     rawgGames.slice(0, 8).map(async (game) => {
                         try {
-                            // Parallel fetch: SteamGrid cover + HLTB times
-                            const [steamGridResults, hltbData] = await Promise.all([
-                                SteamGridService.searchGame(game.name),
-                                HltbService.searchGame(game.name),
-                            ]);
+                            // Fetch SteamGrid cover only (HLTB moved to handleAdd for performance)
+                            const steamGridResults = await SteamGridService.searchGame(game.name);
 
                             let highQualityCover = null;
                             if (steamGridResults.length > 0) {
@@ -59,11 +56,10 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
                             return {
                                 ...game,
                                 highQualityCover,
-                                hltb: hltbData,
                             };
                         } catch (error) {
                             console.error(`Error enriching game ${game.name}:`, error);
-                            return { ...game, hltb: null };
+                            return game;
                         }
                     })
                 );
@@ -94,8 +90,11 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             })
             : ""; // No placeholder - empty if no cover
 
-        // Fetch RAWG extended details (description, metacritic, playtime)
-        const rawgDetails = await RawgService.getGameDetails(game.id);
+        // Fetch RAWG extended details + HLTB times (only when adding)
+        const [rawgDetails, hltbData] = await Promise.all([
+            RawgService.getGameDetails(game.id),
+            HltbService.searchGame(game.name),
+        ]);
 
         const newGame = {
             id: game.id.toString(),
@@ -108,11 +107,11 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
             tags: game.genres?.map(g => g.name).slice(0, 3) || [],
             rating: game.rating || 0,
             releaseYear: game.released?.split("-")[0] || undefined,
-            // HLTB data
-            hltbMainStory: game.hltb?.mainStory ?? undefined,
-            hltbMainExtra: game.hltb?.mainExtra ?? undefined,
-            hltbCompletionist: game.hltb?.completionist ?? undefined,
-            hltbUrl: game.hltb?.gameUrl ?? undefined,
+            // HLTB data (fetched in parallel above)
+            hltbMainStory: hltbData?.mainStory ?? undefined,
+            hltbMainExtra: hltbData?.mainExtra ?? undefined,
+            hltbCompletionist: hltbData?.completionist ?? undefined,
+            hltbUrl: hltbData?.gameUrl ?? undefined,
             // RAWG extended data
             description: rawgDetails?.description_raw ?? undefined,
             metacritic: rawgDetails?.metacritic ?? undefined,
