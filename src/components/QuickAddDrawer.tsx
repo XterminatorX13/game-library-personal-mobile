@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { generateUUID } from "@/lib/uuid";
+import { HltbSuccessDialog } from "@/components/HltbSuccessDialog";
+import { HltbResult } from "@/services/hltb-service";
 
 interface QuickAddDrawerProps {
     game: Game | null;
@@ -31,16 +33,13 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
     // Subscribe to collections
     const collections = useLiveQuery(() => db.collections.toArray());
 
-    const [hltbResult, setHltbResult] = useState<{ main: number, extra: number, completionist: number } | null>(null);
+    // HLTB Success Modal State
+    const [hltbResult, setHltbResult] = useState<HltbResult | null>(null);
     const [showHltbSuccess, setShowHltbSuccess] = useState(false);
 
-    const handleHltbSuccess = (data: any) => {
+    const handleHltbSuccess = (data: HltbResult) => {
         if (data && (data.mainStory || data.mainExtra || data.completionist)) {
-            setHltbResult({
-                main: data.mainStory || 0,
-                extra: data.mainExtra || 0,
-                completionist: data.completionist || 0
-            });
+            setHltbResult(data);
             setShowHltbSuccess(true);
         }
     };
@@ -308,45 +307,13 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
                 </DrawerContent>
             </Drawer>
 
-            {/* HLTB Success Dialog */}
-            {showHltbSuccess && hltbResult && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-background rounded-xl border border-primary/20 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6 text-center space-y-4">
-                            <div className="mx-auto w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
-                                <Check className="h-6 w-6 text-green-500" />
-                            </div>
 
-                            <h2 className="text-xl font-bold text-foreground">Dados HLTB Encontrados!</h2>
-                            <p className="text-sm text-muted-foreground">
-                                Encontramos os tempos de jogo para <span className="font-medium text-foreground">"{game.title}"</span>:
-                            </p>
-
-                            <div className="grid grid-cols-3 gap-3 pt-2">
-                                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                    <div className="text-xl font-bold text-foreground">{hltbResult.main}h</div>
-                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Main</div>
-                                </div>
-                                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                    <div className="text-xl font-bold text-foreground">{hltbResult.extra}h</div>
-                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Extra</div>
-                                </div>
-                                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                                    <div className="text-xl font-bold text-foreground">{hltbResult.completionist}h</div>
-                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">100%</div>
-                                </div>
-                            </div>
-
-                            <Button
-                                className="w-full mt-4"
-                                onClick={() => setShowHltbSuccess(false)}
-                            >
-                                Maravilha!
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* HLTB Success Dialog - Shared Component */}
+            <HltbSuccessDialog
+                open={showHltbSuccess}
+                onOpenChange={setShowHltbSuccess}
+                data={hltbResult}
+            />
         </>
     );
 }

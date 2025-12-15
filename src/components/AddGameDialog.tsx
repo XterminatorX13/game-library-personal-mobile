@@ -119,10 +119,6 @@ export function AddGameDialog({ onAddGame, trigger }: AddGameDialogProps) {
         setResults([]);
         setAddingGameId(null);
 
-
-
-        // ... existing code ...
-
         // 🚀 Fetch extended data in background (non-blocking)
         Promise.all([
             RawgService.getGameDetails(game.id),
