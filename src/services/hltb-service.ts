@@ -13,8 +13,24 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// Production FastAPI on Railway (no local server needed!)
-const API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
+// Dual API URLs: localhost (dev) with Railway fallback (prod)
+const LOCAL_API_URL = "http://localhost:3001/api/hltb";
+const RAILWAY_API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
+
+// Detect environment: try localhost first, fallback to Railway
+const isLocalAvailable = async (): Promise<boolean> => {
+    try {
+        const response = await fetch(LOCAL_API_URL.replace('/api/hltb', '/'), {
+            method: 'GET',
+            signal: AbortSignal.timeout(500) // 500ms timeout
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+};
+
+let API_URL = RAILWAY_API_URL; // Default to Railway
 
 export const HltbService = {
     /**
@@ -26,6 +42,12 @@ export const HltbService = {
         if (!gameName || gameName.length < 2) return null;
 
         try {
+            // Check if localhost is available (cached after first check)
+            if (API_URL === RAILWAY_API_URL && await isLocalAvailable()) {
+                API_URL = LOCAL_API_URL;
+                console.log('[HLTB] Using local API:', LOCAL_API_URL);
+            }
+
             const response = await fetch(
                 `${API_URL}?game=${encodeURIComponent(gameName)}`
             );
