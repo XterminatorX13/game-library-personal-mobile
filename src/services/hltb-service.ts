@@ -15,7 +15,7 @@ export interface HltbResult {
 
 // Dual API URLs: localhost (dev) with Railway fallback (prod)
 const LOCAL_API_URL = "http://localhost:3001/api/hltb";
-const RAILWAY_API_URL = "https://hltb-api-game-production.up.railway.app/api/hltb";
+const RAILWAY_API_URL = "https://hltb-preview.up.railway.app/api/hltb";
 
 // Detect environment: try localhost first, fallback to Railway
 const isLocalAvailable = async (): Promise<boolean> => {
