@@ -29,6 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { SyncService } from "@/services/SyncService";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Platform = string;
 type StatusFilter = "Todos" | "Backlog" | "Jogando" | "Zerado" | "Dropado";
@@ -84,10 +86,14 @@ const Index = () => {
       ...newGame,
       addedAt: newGame.addedAt || Date.now(),
     });
+    // Trigger Background Sync
+    if (user) SyncService.syncGames();
   };
 
   const handleUpdateGame = async (updatedGame: Game) => {
     await db.games.put(updatedGame); // put replaces the entire object
+    // Trigger Background Sync
+    if (user) SyncService.syncGames();
   };
 
   const handleDeleteGame = async (gameId: string) => {
@@ -135,6 +141,10 @@ const Index = () => {
     if (sortOrder === "rating") return (b.rating || 0) - (a.rating || 0);
     return a.title.localeCompare(b.title);
   });
+
+  const { user } = useAuth();
+
+  // SyncService moved to App.tsx for performance
 
   // Update skeleton count when games load (premium: exact count)
   useEffect(() => {
@@ -196,6 +206,13 @@ const Index = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            <Link
+              to="/login"
+              className="px-4 py-2 text-sm font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+            >
+              Login / Sync
+            </Link>
           </div>
         </div>
       </header>

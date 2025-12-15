@@ -14,6 +14,7 @@ export interface Game {
   notes?: string;
   releaseYear?: string;
   addedAt: number;
+  updatedAt?: number; // For sync conflict resolution
   // HowLongToBeat data (optional)
   hltbMainStory?: number;      // Hours to beat main story
   hltbMainExtra?: number;      // Hours for main + extras
@@ -22,7 +23,9 @@ export interface Game {
   // RAWG extended data (optional)
   description?: string;        // Game description
   metacritic?: number | null;  // Metacritic score 0-100
+  metacritic?: number | null;  // Metacritic score 0-100
   rawgPlaytime?: number;       // Average playtime (fallback for HLTB)
+  rawgId?: number;             // Original RAWG ID for future lookups/enrichment
 }
 
 export interface Collection {
@@ -31,6 +34,7 @@ export interface Collection {
   description?: string;
   gameIds: string[];
   createdAt: number;
+  updatedAt?: number;
   // Future: Auto-collections support
   isAuto?: boolean;
   autoRules?: {
@@ -56,6 +60,19 @@ export class GameVaultDB extends Dexie {
     this.version(2).stores({
       games: 'id, title, platform, status, addedAt',
       collections: 'id, name, createdAt, isAuto'
+    });
+    // Version 3: Added sync fields (updatedAt)
+    this.version(3).stores({
+      games: 'id, title, platform, status, addedAt, updatedAt',
+      collections: 'id, name, createdAt, updatedAt, isAuto'
+    }).upgrade(tx => {
+      // Populate updatedAt with addedAt/createdAt for existing items
+      tx.table('games').toCollection().modify(game => {
+        if (!game.updatedAt) game.updatedAt = game.addedAt;
+      });
+      tx.table('collections').toCollection().modify(col => {
+        if (!col.updatedAt) col.updatedAt = col.createdAt;
+      });
     });
   }
 }

@@ -57,52 +57,7 @@ export function Search() {
         }
     };
 
-    const handleAddToLibrary = async (result: SearchResult) => {
-        try {
-            const platformName = result.platforms?.[0]?.platform?.name || "Unknown";
-            const year = result.released?.split("-")[0] || "";
 
-            const newGame: Game = {
-                id: generateUUID(),
-                title: result.name,
-                platform: platformName,
-                store: "RAWG",
-                status: "backlog",
-                hoursPlayed: 0,
-                cover: result.background_image ? optimizeImageUrl(result.background_image) : "",
-                tags: [],
-                releaseYear: year,
-                addedAt: Date.now(),
-            };
-
-            // ⚡ Add immediately with basic data
-            await db.games.put(newGame);
-            toast.success(`"${result.name}" adicionado!`, {
-                description: "Buscando HLTB...",
-            });
-
-            // 🚀 Fetch HLTB in background (non-blocking)
-            Promise.all([
-                RawgService.getGameDetails(result.id),
-                import("@/services/hltb-service").then(m => m.HltbService.searchGame(result.name)),
-            ]).then(async ([rawgDetails, hltbData]) => {
-                const enrichedGame = {
-                    ...newGame,
-                    hltbMainStory: hltbData?.mainStory ?? undefined,
-                    hltbMainExtra: hltbData?.mainExtra ?? undefined,
-                    hltbCompletionist: hltbData?.completionist ?? undefined,
-                    hltbUrl: hltbData?.gameUrl ?? undefined,
-                    description: rawgDetails?.description_raw ?? undefined,
-                    metacritic: rawgDetails?.metacritic ?? undefined,
-                };
-                await db.games.put(enrichedGame);
-            }).catch(err => console.error("Background enrichment failed:", err));
-
-        } catch (error) {
-            console.error(error);
-            toast.error("Erro ao adicionar jogo");
-        }
-    };
 
     const handleQuickAdd = (result: SearchResult) => {
         const platformName = result.platforms?.[0]?.platform?.name || "Unknown";
@@ -118,6 +73,7 @@ export function Search() {
             cover: result.background_image ? optimizeImageUrl(result.background_image) : "",
             tags: [],
             releaseYear: year,
+            rawgId: result.id, // Store RAWG ID for enrichment
             addedAt: Date.now(),
         };
 
@@ -287,23 +243,14 @@ export function Search() {
                                         {/* Gradient Overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                                        {/* Hover Overlay with Actions */}
-                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 p-4">
-                                            <Button
-                                                onClick={() => handleQuickAdd(result)}
-                                                className="w-full max-w-[200px] shadow-lg"
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Adicionar a Coleção
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleAddToLibrary(result)}
-                                                variant="secondary"
-                                                size="sm"
-                                                className="w-full max-w-[200px]"
-                                            >
-                                                + Biblioteca
-                                            </Button>
+                                        {/* Hover Overlay - Simplified to click hint */}
+                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 cursor-pointer"
+                                            onClick={() => handleQuickAdd(result)}
+                                        >
+                                            <div className="bg-background/20 backdrop-blur-md rounded-full p-3 mb-2 shadow-lg group-hover:scale-110 transition-transform">
+                                                <Plus className="h-6 w-6 text-white" />
+                                            </div>
+                                            <span className="text-white font-medium text-sm">Adicionar</span>
                                         </div>
                                     </div>
 

@@ -11,7 +11,7 @@ const NAV_ITEMS = [
     { icon: Search, label: "Buscar", path: "/search" },
     { icon: Plus, label: "Adicionar", path: "#add" }, // Special case
     { icon: FolderHeart, label: "Listas", path: "/collections" },
-    { icon: User, label: "Perfil", path: "/profile" },
+    { icon: User, label: "Perfil", path: "/login" },
 ];
 
 export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {

@@ -33,6 +33,35 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
         if (!game) return;
 
         try {
+            // Special Case: Just Add to Library
+            if (collectionId === "library_only") {
+                const existingGame = await db.games.get(game.id);
+                if (existingGame) {
+                    toast.info("Jogo já está na biblioteca!");
+                    return;
+                }
+                // Add to library
+                await db.games.add(game);
+                toast.success("Adicionado à biblioteca!");
+
+                // Trigger background fetch
+                import("@/services/hltb-service").then(async ({ HltbService }) => {
+                    const hltbData = await HltbService.searchGame(game.title);
+                    if (hltbData) {
+                        await db.games.update(game.id, {
+                            hltbMainStory: hltbData.mainStory ?? undefined,
+                            hltbMainExtra: hltbData.mainExtra ?? undefined,
+                            hltbCompletionist: hltbData.completionist ?? undefined,
+                            hltbUrl: hltbData.gameUrl ?? undefined,
+                        });
+                    }
+                }).catch(console.error);
+
+                if (onComplete) onComplete();
+                onOpenChange(false);
+                return;
+            }
+
             const isInCollection = currentGameIds.includes(game.id);
 
             // If adding to collection (not removing)
@@ -130,6 +159,19 @@ export function QuickAddDrawer({ game, open, onOpenChange, onComplete }: QuickAd
                 </DrawerHeader>
 
                 <div className="px-4 pb-4 overflow-y-auto max-h-[60vh]">
+                    {/* Library Status Action */}
+                    <div className="mb-4">
+                        <Button
+                            className="w-full justify-start gap-2 h-12 text-md"
+                            variant="secondary"
+                            onClick={() => handleToggleCollection("library_only", [])}
+                            disabled={false} // Would need live check to disable if already in library, but toggle logic handles it
+                        >
+                            <Plus className="h-5 w-5" />
+                            Adicionar apenas à Biblioteca
+                        </Button>
+                    </div>
+
                     {/* Collections Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                         {collections?.map((collection) => {

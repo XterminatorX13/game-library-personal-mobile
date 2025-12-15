@@ -3,11 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SyncService } from "@/services/SyncService";
+import { useEffect } from "react";
 
 // Lazy load pages for performance optimization
 const Index = lazy(() => import("./pages/Index"));
 const Collections = lazy(() => import("./pages/Collections"));
 const Search = lazy(() => import("./pages/Search"));
+const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -30,6 +34,15 @@ const PageLoader = () => (
 const AppRoutes = () => {
   useKeyboardShortcuts();
 
+  // Sync with Supabase on load/auth change (Global)
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user) {
+      // Small timeout to allow UI to render first
+      setTimeout(() => SyncService.syncGames(), 1000);
+    }
+  }, [user]);
+
   return (
     <>
       <Suspense fallback={<PageLoader />}>
@@ -38,6 +51,7 @@ const AppRoutes = () => {
           <Route path="/add" element={<Index />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
@@ -49,7 +63,9 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );
