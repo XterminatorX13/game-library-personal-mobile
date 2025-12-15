@@ -1,6 +1,6 @@
 /**
  * HowLongToBeat Service
- * Uses local FastAPI proxy (running on port 3001)
+ * Uses Vercel Edge Function (primary) with localhost fallback (dev)
  */
 
 export interface HltbResult {
@@ -13,43 +13,45 @@ export interface HltbResult {
     gameUrl: string;
 }
 
-// Dual API URLs: localhost (dev) with Railway fallback (prod)
+// API URLs: Vercel Edge Function (production) with localhost fallback (dev)
+const VERCEL_API_URL = "/api/hltb"; // Same-origin, no CORS issues!
 const LOCAL_API_URL = "http://localhost:3001/api/hltb";
-const RAILWAY_API_URL = "https://hltb-api-production.up.railway.app/api/hltb";
 
-// Detect environment: try localhost first, fallback to Railway
-const isLocalAvailable = async (): Promise<boolean> => {
+// Cache localhost availability check
+let useLocalhost: boolean | null = null;
+
+const checkLocalhost = async (): Promise<boolean> => {
+    if (useLocalhost !== null) return useLocalhost;
+
     try {
-        const response = await fetch(LOCAL_API_URL.replace('/api/hltb', '/'), {
+        const response = await fetch("http://localhost:3001/", {
             method: 'GET',
-            signal: AbortSignal.timeout(500) // 500ms timeout
+            signal: AbortSignal.timeout(300)
         });
-        return response.ok;
+        useLocalhost = response.ok;
     } catch {
-        return false;
+        useLocalhost = false;
     }
-};
 
-let API_URL = RAILWAY_API_URL; // Default to Railway
+    console.log('[HLTB] Using', useLocalhost ? 'localhost:3001' : 'Vercel Edge Function');
+    return useLocalhost;
+};
 
 export const HltbService = {
     /**
-     * Search for a game on HowLongToBeat via local FastAPI proxy
-     * @param gameName - Name of the game to search
-     * @returns HltbResult or null if not found/error
+     * Search for a game on HowLongToBeat
+     * Uses Vercel Edge Function (same-origin) or localhost (dev)
      */
     async searchGame(gameName: string): Promise<HltbResult | null> {
         if (!gameName || gameName.length < 2) return null;
 
         try {
-            // Check if localhost is available (cached after first check)
-            if (API_URL === RAILWAY_API_URL && await isLocalAvailable()) {
-                API_URL = LOCAL_API_URL;
-                console.log('[HLTB] Using local API:', LOCAL_API_URL);
-            }
+            // Use localhost if available (dev), otherwise Vercel Edge
+            const isLocal = await checkLocalhost();
+            const apiUrl = isLocal ? LOCAL_API_URL : VERCEL_API_URL;
 
             const response = await fetch(
-                `${API_URL}?game=${encodeURIComponent(gameName)}`
+                `${apiUrl}?game=${encodeURIComponent(gameName)}`
             );
 
             if (!response.ok) {
@@ -58,8 +60,6 @@ export const HltbService = {
             }
 
             const data = await response.json();
-
-            // DEBUG: Log raw response
             console.log("[HLTB] Raw API response for", gameName, ":", data);
 
             // Check for error response
@@ -78,7 +78,7 @@ export const HltbService = {
                 gameUrl: data.gameUrl,
             };
 
-            console.debug("[HLTB] Found via FastAPI:", result.gameName, {
+            console.debug("[HLTB] Found:", result.gameName, {
                 main: result.mainStory,
                 extra: result.mainExtra,
                 "100%": result.completionist,
