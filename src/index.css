@@ -383,7 +383,9 @@
 
 /* Fade on scroll (for headers) */
 .fade-header {
-  @apply backdrop-blur-xl bg-background/80 border-b border-white/5;
+  @apply bg-background/90 border-b border-white/5;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* Focus ring - gold */
@@ -403,4 +405,68 @@
 /* Scale on active */
 .active-scale:active {
   @apply scale-95;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Performance Optimizations - Mobile & Low-end devices
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Reduce motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .btn-shimmer::before,
+  .btn-shimmer-gold::before {
+    display: none;
+  }
+  
+  .ambient-gold,
+  .ambient-indigo {
+    display: none;
+  }
+}
+
+/* Mobile performance - lighter effects */
+@media (max-width: 768px) {
+  .fade-header {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  .glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  .glass-subtle {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  /* Reduce ambient light intensity on mobile */
+  .ambient-gold,
+  .ambient-indigo {
+    opacity: 0.2 !important;
+    filter: blur(60px);
+  }
+  
+  /* Simpler shadows on mobile */
+  .card-luxury:hover {
+    box-shadow: 0 0 15px -5px rgba(245, 158, 11, 0.1);
+  }
+}
+
+/* GPU acceleration hints */
+.card-luxury,
+.btn-shimmer,
+.ambient-gold,
+.ambient-indigo {
+  will-change: transform;
+  transform: translateZ(0);
 }
