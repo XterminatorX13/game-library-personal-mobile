@@ -19,7 +19,7 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
     const [isAddOpen, setIsAddOpen] = useState(false);
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-md md:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden">
             {/* Safe area for iOS */}
             <div className="pb-safe">
                 <div className="grid grid-cols-5 h-14 items-center">
@@ -37,7 +37,7 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
                                             trigger={
                                                 <Button
                                                     size="icon"
-                                                    className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all border-4 border-background active:scale-95"
+                                                    className="h-14 w-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.7)] transition-all border-4 border-black active:scale-95"
                                                 >
                                                     <Plus className="h-7 w-7" />
                                                 </Button>
@@ -57,13 +57,13 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
                             >
                                 <Link
                                     to={item.path}
-                                    className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors ${isActive
-                                        ? "text-primary"
-                                        : "text-muted-foreground"
+                                    className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-all duration-300 ${isActive
+                                        ? "text-amber-400"
+                                        : "text-zinc-600 hover:text-zinc-400"
                                         }`}
                                 >
-                                    <Icon className="h-5 w-5" />
-                                    <span className="text-[10px] font-medium">{item.label}</span>
+                                    <Icon className={`h-5 w-5 ${isActive ? "drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : ""}`} />
+                                    <span className={`text-[10px] font-medium tracking-wide ${isActive ? "text-amber-300" : ""}`}>{item.label}</span>
                                 </Link>
                             </motion.div>
                         );

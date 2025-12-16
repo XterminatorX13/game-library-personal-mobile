@@ -19,22 +19,27 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      position="bottom-right"
       icons={{
-        success: <CircleCheck className="h-4 w-4" />,
-        info: <Info className="h-4 w-4" />,
-        warning: <TriangleAlert className="h-4 w-4" />,
-        error: <OctagonX className="h-4 w-4" />,
-        loading: <LoaderCircle className="h-4 w-4 animate-spin" />,
+        success: <CircleCheck className="h-4 w-4 text-emerald-400" />,
+        info: <Info className="h-4 w-4 text-amber-400" />,
+        warning: <TriangleAlert className="h-4 w-4 text-amber-500" />,
+        error: <OctagonX className="h-4 w-4 text-rose-400" />,
+        loading: <LoaderCircle className="h-4 w-4 animate-spin text-zinc-400" />,
       }}
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
+            "group toast group-[.toaster]:bg-black/90 group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-white group-[.toaster]:border group-[.toaster]:border-white/10 group-[.toaster]:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)] group-[.toaster]:rounded-xl",
+          description: "group-[.toast]:text-zinc-400 group-[.toast]:text-sm",
           actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+            "group-[.toast]:bg-white group-[.toast]:text-black group-[.toast]:rounded-full group-[.toast]:font-medium group-[.toast]:shadow-md",
           cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+            "group-[.toast]:bg-zinc-800 group-[.toast]:text-zinc-300 group-[.toast]:rounded-full group-[.toast]:border group-[.toast]:border-white/10",
+          success: "group-[.toaster]:border-emerald-500/20",
+          error: "group-[.toaster]:border-rose-500/20",
+          warning: "group-[.toaster]:border-amber-500/20",
+          info: "group-[.toaster]:border-amber-500/20",
         },
       }}
       {...props}
