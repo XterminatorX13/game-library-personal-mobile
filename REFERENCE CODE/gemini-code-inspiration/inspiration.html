@@ -1,0 +1,883 @@
+import React, { useState, useEffect, useMemo, useCallback } from "react"
+import {
+Search,
+LayoutGrid,
+List,
+Plus,
+X,
+Clock,
+Trophy,
+Gamepad2,
+Trash2,
+ArrowUpDown,
+CheckCircle2,
+PlayCircle,
+PauseCircle,
+XCircle,
+Save,
+Sparkles,
+Loader2,
+Bot,
+Star,
+MoreHorizontal,
+Crown,
+Info,
+AlertTriangle,
+Check
+} from "lucide-react"
+
+// --- CSS para Textura de Luxo & Animações ---
+const luxuryGlobalStyles = `
+@keyframes shimmer {
+0% { transform: translateX(-100%); }
+100% { transform: translateX(100%); }
+}
+@keyframes slideIn {
+from { transform: translateX(100%); opacity: 0; }
+to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+from { opacity: 1; }
+to { opacity: 0; }
+}
+.luxury-noise {
+background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter
+id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'
+stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'
+opacity='0.05'/%3E%3C/svg%3E");
+}
+.text-gold-gradient {
+background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+}
+`;
+
+// --- Gemini API Helper ---
+const generateGeminiContent = async (prompt: string, jsonMode: boolean = false) => {
+const apiKey = ""; // Injected at runtime
+const url =
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+const payload: any = {
+contents: [{ parts: [{ text: prompt }] }]
+};
+
+if (jsonMode) {
+payload.generationConfig = {
+responseMimeType: "application/json"
+};
+}
+
+const delays = [1000, 2000, 4000, 8000, 16000];
+let lastError;
+
+for (let i = 0; i <= 5; i++) { try { const response=await fetch(url, { method: "POST" , headers: { "Content-Type"
+  : "application/json" }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error(`API Error:
+  ${response.status}`); const data=await response.json(); const text=data.candidates?.[0]?.content?.parts?.[0]?.text; if
+  (!text) throw new Error("No content generated"); return jsonMode ? JSON.parse(text) : text; } catch (err) {
+  lastError=err; if (i < 5) await new Promise(resolve=> setTimeout(resolve, delays[i]));
+  }
+  }
+  throw lastError;
+  };
+
+  // --- Types ---
+  type GameStatus = "backlog" | "playing" | "finished" | "dropped"
+  type ToastType = "success" | "error" | "info"
+
+  interface Game {
+  id: string
+  title: string
+  platform: string
+  status: GameStatus
+  rating?: number
+  addedAt: number
+  hoursPlayed: number
+  coverUrl?: string
+  tags: string[]
+  notes?: string
+  }
+
+  interface ToastMessage {
+  id: string
+  message: string
+  type: ToastType
+  }
+
+  type ViewMode = "grid" | "list"
+  type SortOption = "newest" | "name" | "rating"
+  type StatusFilter = "Todos" | "Backlog" | "Jogando" | "Zerado" | "Dropado"
+
+  // --- Constants & Helpers ---
+  const PLATFORMS = ["PC", "PS5", "PS4", "Xbox Series X", "Switch", "Steam Deck", "Mobile"]
+
+  const statusLabelMap: Record<GameStatus, StatusFilter> = {
+    backlog: "Backlog",
+    playing: "Jogando",
+    finished: "Zerado",
+    dropped: "Dropado",
+    }
+
+    const getStatusStyles = (status: GameStatus) => {
+    switch (status) {
+    case "playing": return "text-amber-200 bg-amber-500/10 border-amber-500/20"
+    case "finished": return "text-emerald-200 bg-emerald-500/10 border-emerald-500/20"
+    case "dropped": return "text-rose-200 bg-rose-500/10 border-rose-500/20"
+    default: return "text-zinc-400 bg-zinc-500/10 border-zinc-500/20"
+    }
+    }
+
+    // --- UI Components (Ultra Premium) ---
+
+    // 1. Toast Component
+    const ToastContainer = ({ toasts, removeToast }: { toasts: ToastMessage[], removeToast: (id: string) => void }) => {
+    return (
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+      {toasts.map((toast) => (
+      <div key={toast.id}
+        className="pointer-events-auto bg-[#0a0a0a]/90 backdrop-blur-xl border border-white/10 text-zinc-200 px-6 py-4 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.8)] flex items-center gap-4 min-w-[300px] animate-[slideIn_0.3s_ease-out]">
+        {toast.type === 'success' && <div className="p-1 rounded-full bg-emerald-500/20">
+          <Check className="w-4 h-4 text-emerald-400" />
+        </div>}
+        {toast.type === 'error' && <div className="p-1 rounded-full bg-rose-500/20">
+          <AlertTriangle className="w-4 h-4 text-rose-400" />
+        </div>}
+        {toast.type === 'info' && <div className="p-1 rounded-full bg-amber-500/20">
+          <Info className="w-4 h-4 text-amber-400" />
+        </div>}
+
+        <div className="flex-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-0.5">{toast.type === 'error' ?
+            'System Alert' : 'Notification'}</p>
+          <p className="text-sm font-light text-white">{toast.message}</p>
+        </div>
+
+        <button onClick={()=> removeToast(toast.id)} className="text-zinc-600 hover:text-white transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      ))}
+    </div>
+    )
+    }
+
+    const Button = ({
+    children, variant = "primary", size = "default", className = "", onClick, disabled, loading, ...props
+    }: any) => {
+    const baseStyles = "relative overflow-hidden inline-flex items-center justify-center font-medium transition-all
+    duration-500 disabled:opacity-50 disabled:pointer-events-none group"
+
+    const variants = {
+    primary: "bg-white text-black hover:bg-zinc-200 shadow-[0_0_25px_-5px_rgba(255,255,255,0.2)] rounded-full
+    tracking-wide",
+    secondary: "bg-zinc-900/40 text-zinc-400 border border-white/5 hover:border-white/20 hover:text-white
+    hover:bg-zinc-800/60 backdrop-blur-xl rounded-full",
+    ghost: "bg-transparent text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg",
+    danger: "text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-full",
+    gemini: "bg-gradient-to-r from-amber-700 via-amber-500 to-amber-700 text-black font-bold
+    shadow-[0_0_20px_-5px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.5)] border-0 rounded-full
+    bg-[length:200%_auto] hover:bg-right transition-all duration-700"
+    }
+
+    const sizes = {
+    default: "h-10 sm:h-11 px-5 sm:px-6 text-[10px] sm:text-xs uppercase tracking-widest",
+    sm: "h-8 px-4 text-[9px] uppercase tracking-widest",
+    icon: "h-10 w-10 sm:h-11 sm:w-11 p-0"
+    }
+
+    return (
+    <button className={`${baseStyles} ${variants[variant as keyof typeof variants]} ${sizes[size as keyof typeof sizes]}
+      ${className}`} onClick={onClick} disabled={disabled || loading} {...props}>
+      {variant === 'primary' && (
+      <div
+        className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" />
+      )}
+      <span className="relative z-20 flex items-center gap-2">
+        {loading ?
+        <Loader2 className="w-4 h-4 animate-spin" /> : children}
+      </span>
+    </button>
+    )
+    }
+
+    const Modal = ({ isOpen, onClose, title, children }: any) => {
+    if (!isOpen) return null
+    return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-500">
+      <div
+        className="bg-[#0a0a0a] border border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-5 duration-500 flex flex-col max-h-[90vh] relative">
+        <div
+          className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+
+        <div className="flex items-center justify-between px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 shrink-0">
+          <h3 className="text-lg sm:text-xl font-light text-white tracking-widest uppercase">{title}</h3>
+          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors">
+            <X className="w-6 h-6 stroke-[1]" />
+          </button>
+        </div>
+        <div className="p-6 sm:p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+          {children}
+        </div>
+      </div>
+    </div>
+    )
+    }
+
+    // Minimalist Floating Input
+    const Input = ({ label, className, ...props }: any) => (
+    <div className="relative group w-full pt-4">
+      <input className={`peer block w-full border-b border-zinc-800 bg-transparent py-2.5 text-sm text-white
+        focus:border-amber-500/50 focus:outline-none transition-colors ${className}`} placeholder=" " {...props} />
+      {label && (
+      <label
+        className="absolute top-0 left-0 text-[10px] font-bold text-zinc-500 uppercase tracking-widest transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-bold peer-focus:text-amber-500/80">
+        {label}
+      </label>
+      )}
+    </div>
+    )
+
+    const Select = ({ label, options, ...props }: any) => (
+    <div className="space-y-1.5 w-full">
+      {label && <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{label}</label>}
+      <div className="relative">
+        <select
+          className="flex h-12 w-full appearance-none bg-zinc-900/30 border border-white/5 hover:border-white/10 rounded-xl px-4 py-2 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+          {...props}>
+          {options.map((opt: any) => (
+          <option key={opt.value} value={opt.value} className="bg-zinc-950 text-zinc-300">{opt.label}</option>
+          ))}
+        </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-600">
+          <ArrowUpDown className="h-3 w-3" />
+        </div>
+      </div>
+    </div>
+    )
+
+    const GameCard = ({ game, onClick, viewMode }: { game: Game, onClick: () => void, viewMode: ViewMode }) => {
+    if (viewMode === 'list') {
+    return (
+    <div onClick={onClick}
+      className="group flex items-center gap-4 sm:gap-6 p-4 rounded-2xl hover:bg-white/[0.02] border-b border-white/5 transition-all cursor-pointer">
+      <div
+        className="h-12 w-16 sm:w-20 bg-zinc-900 rounded-lg overflow-hidden shrink-0 relative opacity-60 group-hover:opacity-100 transition-opacity">
+        {game.coverUrl ? (
+        <img src={game.coverUrl} alt={game.title}
+          className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+        ) : (
+        <div className="h-full w-full flex items-center justify-center text-zinc-800">
+          <Gamepad2 className="h-5 w-5" />
+        </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3
+            className="font-medium text-base sm:text-lg text-zinc-300 group-hover:text-white transition-colors tracking-wide truncate">
+            {game.title}</h3>
+          <div
+            className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-zinc-600 font-medium tracking-wider uppercase mt-1">
+            <span>{game.platform}</span>
+            <span className="w-1 h-1 rounded-full bg-zinc-800" />
+            <span>{game.hoursPlayed}h</span>
+          </div>
+        </div>
+        <div className={`self-start sm:self-center px-2 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] uppercase
+          tracking-widest font-bold border ${getStatusStyles(game.status)}`}>
+          {statusLabelMap[game.status]}
+        </div>
+      </div>
+    </div>
+    )
+    }
+
+    // Grid View - Luxury "Slab"
+    return (
+    <div onClick={onClick}
+      className="group relative bg-[#0a0a0a] rounded-[1.5rem] overflow-hidden cursor-pointer transition-all duration-700 hover:-translate-y-2">
+      <div className="aspect-[3/4] relative overflow-hidden">
+        {game.coverUrl ? (
+        <>
+          <img src={game.coverUrl} alt={game.title}
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-60 group-hover:opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/20 to-[#050505]" />
+        </>
+        ) : (
+        <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-800">
+          <Gamepad2 className="h-12 w-12 opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#050505]" />
+        </div>
+        )}
+
+        <div className="absolute top-3 right-3 z-10">
+          {game.status === 'playing' && (
+          <span className="relative flex h-2.5 w-2.5">
+            <span
+              className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+          </span>
+          )}
+          {game.status === 'finished' &&
+          <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />}
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-20">
+          <h3
+            className="text-lg sm:text-xl text-white font-light tracking-wide leading-tight mb-2 sm:mb-3 drop-shadow-md transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+            {game.title}
+          </h3>
+
+          <div
+            className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span
+                className="text-[9px] sm:text-[10px] font-bold text-amber-200/80 uppercase tracking-widest border border-amber-500/20 px-1.5 py-0.5 rounded-full bg-amber-950/30 backdrop-blur-md">
+                {game.platform}
+              </span>
+            </div>
+            {game.rating && game.rating > 0 && (
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${i < game.rating! ? 'fill-amber-400 text-amber-400'
+                : 'text-zinc-800' }`} />
+              ))}
+            </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="absolute inset-0 rounded-[1.5rem] border border-white/5 group-hover:border-amber-500/20 pointer-events-none transition-colors duration-700" />
+    </div>
+    )
+    }
+
+    // --- Main Application ---
+    export default function GameVault() {
+    const [games, setGames] = useState<Game[]>(() => {
+      if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('gamevault_data')
+      if (saved) return JSON.parse(saved)
+      }
+      return [] // Start empty
+      })
+
+      // Toast State
+      const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+        const addToast = useCallback((message: string, type: ToastType = 'info') => {
+        const id = crypto.randomUUID()
+        setToasts(prev => [...prev, { id, message, type }])
+        setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id))
+        }, 4000)
+        }, [])
+
+        const removeToast = (id: string) => {
+        setToasts(prev => prev.filter(t => t.id !== id))
+        }
+
+        const [search, setSearch] = useState("")
+        const [statusFilter, setStatusFilter] = useState<StatusFilter>("Todos")
+          const [platformFilter, setPlatformFilter] = useState("Todos")
+          const [sortOrder, setSortOrder] = useState<SortOption>("newest")
+            const [viewMode, setViewMode] = useState<ViewMode>("grid")
+
+              // Dialog States
+              const [isAddOpen, setIsAddOpen] = useState(false)
+              const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+
+                // Gemini AI States
+                const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+                const [aiRecommendation, setAiRecommendation] = useState<string>("")
+                  const [isAiLoading, setIsAiLoading] = useState(false)
+                  const [isAutoFillLoading, setIsAutoFillLoading] = useState(false)
+
+                  // Form States
+                  const [addFormTitle, setAddFormTitle] = useState("")
+                  const [addFormPlatform, setAddFormPlatform] = useState("PC")
+                  const [addFormHours, setAddFormHours] = useState("")
+                  const [addFormNotes, setAddFormNotes] = useState("")
+                  const [addFormTags, setAddFormTags] = useState<string[]>([])
+
+                    useEffect(() => {
+                    const style = document.createElement('style');
+                    style.textContent = luxuryGlobalStyles;
+                    document.head.appendChild(style);
+                    return () => { document.head.removeChild(style); };
+                    }, []);
+
+                    useEffect(() => {
+                    localStorage.setItem('gamevault_data', JSON.stringify(games))
+                    }, [games])
+
+                    const platforms = useMemo(() =>
+                    ["Todos", ...Array.from(new Set(games.map(g => g.platform))).sort()],
+                    [games])
+
+                    const filteredGames = useMemo(() => {
+                    return games.filter(game => {
+                    const matchesSearch = game.title.toLowerCase().includes(search.toLowerCase()) ||
+                    game.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+                    const matchesPlatform = platformFilter === "Todos" ? true : game.platform === platformFilter
+                    const matchesStatus = statusFilter === "Todos" ? true : statusLabelMap[game.status] === statusFilter
+                    return matchesSearch && matchesPlatform && matchesStatus
+                    }).sort((a, b) => {
+                    if (sortOrder === "newest") return b.addedAt - a.addedAt
+                    if (sortOrder === "rating") return (b.rating || 0) - (a.rating || 0)
+                    return a.title.localeCompare(b.title)
+                    })
+                    }, [games, search, platformFilter, statusFilter, sortOrder])
+
+                    const handleAddGame = (e: React.FormEvent) => {
+                    e.preventDefault()
+                    const form = e.target as HTMLFormElement
+                    const formData = new FormData(form)
+
+                    if (!addFormTitle.trim()) {
+                    addToast("Title is required", "error")
+                    return
+                    }
+
+                    const newGame: Game = {
+                    id: crypto.randomUUID(),
+                    title: addFormTitle,
+                    platform: addFormPlatform,
+                    status: formData.get('status') as GameStatus,
+                    rating: Number(formData.get('rating')) || 0,
+                    hoursPlayed: Number(addFormHours) || 0,
+                    addedAt: Date.now(),
+                    tags: addFormTags,
+                    notes: addFormNotes,
+                    coverUrl: ""
+                    }
+
+                    setGames(prev => [newGame, ...prev])
+                    setIsAddOpen(false)
+                    resetAddForm()
+                    addToast("Asset successfully acquired", "success")
+                    }
+
+                    const resetAddForm = () => {
+                    setAddFormTitle("")
+                    setAddFormPlatform("PC")
+                    setAddFormHours("")
+                    setAddFormNotes("")
+                    setAddFormTags([])
+                    }
+
+                    const handleDelete = (id: string) => {
+                    setGames(prev => prev.filter(g => g.id !== id))
+                    setSelectedGame(null)
+                    addToast("Asset removed from collection", "info")
+                    }
+
+                    const handleUpdate = (e: React.FormEvent) => {
+                    e.preventDefault()
+                    if (!selectedGame) return
+
+                    const form = e.target as HTMLFormElement
+                    const formData = new FormData(form)
+
+                    const updatedGame = {
+                    ...selectedGame,
+                    title: formData.get('title') as string,
+                    platform: formData.get('platform') as string,
+                    status: formData.get('status') as GameStatus,
+                    rating: Number(formData.get('rating')),
+                    hoursPlayed: Number(formData.get('hours')),
+                    notes: formData.get('notes') as string,
+                    }
+
+                    setGames(prev => prev.map(g => g.id === selectedGame.id ? updatedGame : g))
+                    setSelectedGame(null)
+                    addToast("Asset record updated", "success")
+                    }
+
+                    const handleAiAutoFill = async () => {
+                    if (!addFormTitle) {
+                    addToast("Please enter a title identification first", "error")
+                    return;
+                    }
+
+                    setIsAutoFillLoading(true);
+                    try {
+                    const prompt = `You are a video game database assistant.
+                    For the game "${addFormTitle}", provide the following details in JSON format:
+                    {
+                    "platform": "The most common platform (e.g., PC, PS5, Switch, etc.)",
+                    "estimatedHours": "Average hours to beat main story (number only)",
+                    "summary": "A short, engaging 2-sentence summary of the game.",
+                    "tags": ["Tag1", "Tag2", "Tag3", "Tag4"]
+                    }`;
+
+                    const data = await generateGeminiContent(prompt, true);
+
+                    if (data) {
+                    if (data.platform) setAddFormPlatform(data.platform);
+                    if (data.estimatedHours) setAddFormHours(data.estimatedHours.toString());
+                    if (data.summary) setAddFormNotes(data.summary);
+                    if (data.tags) setAddFormTags(data.tags);
+                    addToast("Data retrieved from archives", "success")
+                    }
+                    } catch (error) {
+                    console.error("AI Error:", error);
+                    addToast("Connection to archives failed", "error")
+                    } finally {
+                    setIsAutoFillLoading(false);
+                    }
+                    };
+
+                    const handleAiRecommendation = async () => {
+                    setIsAiLoading(true);
+                    setIsAiModalOpen(true);
+                    setAiRecommendation("");
+
+                    try {
+                    const likedGames = games.filter(g => (g.rating || 0) >= 4).map(g => g.title).join(", ");
+                    const backlogGames = games.filter(g => g.status === 'backlog').map(g => g.title).join(", ");
+                    const finishedGames = games.filter(g => g.status === 'finished').map(g => g.title).join(", ");
+
+                    const prompt = `Act as a high-end luxury lifestyle concierge specializing in digital entertainment.
+                    Based on my library:
+                    - Loved: ${likedGames || "None yet"}
+                    - Finished: ${finishedGames || "None yet"}
+                    - Backlog: ${backlogGames || "None"}
+
+                    Provide a sophisticated, curated response:
+                    1. "From Your Vault": Recommend 1 game from my backlog.
+                    2. "The Collection Update": Recommend 2 new games to acquire.
+
+                    Use elegant language.`;
+
+                    const text = await generateGeminiContent(prompt, false);
+                    setAiRecommendation(text);
+                    } catch (error) {
+                    console.error("AI Error:", error);
+                    setAiRecommendation("Service unavailable.");
+                    addToast("Concierge is currently busy", "error")
+                    } finally {
+                    setIsAiLoading(false);
+                    }
+                    };
+
+                    const totalHours = games.reduce((acc, curr) => acc + (curr.hoursPlayed || 0), 0)
+                    const finishedCount = games.filter(g => g.status === 'finished').length
+
+                    return (
+                    <div
+                      className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-amber-500/30 selection:text-amber-100 overflow-x-hidden">
+
+                      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+                      {/* Noise Texture */}
+                      <div className="fixed inset-0 pointer-events-none luxury-noise z-[1]" />
+
+                      {/* Ambient Light (Gold & Deep Blue) */}
+                      <div className="fixed inset-0 pointer-events-none z-0">
+                        <div
+                          className="absolute top-[-20%] left-[20%] w-[60vw] h-[60vw] bg-indigo-900/10 rounded-full blur-[150px] opacity-40" />
+                        <div
+                          className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-amber-900/5 rounded-full blur-[120px] opacity-30" />
+                      </div>
+
+                      <div className="relative z-10 max-w-[1600px] mx-auto">
+                        {/* Header - Ultra Minimal */}
+                        <header
+                          className="sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.03]">
+                          <div className="px-4 sm:px-8 h-20 sm:h-24 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {/* Logo: Just Text + Dot */}
+                              <h1 className="text-2xl sm:text-3xl font-light tracking-[0.2em] text-white truncate">
+                                GAME<span
+                                  className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">VAULT</span>
+                                <span className="text-amber-500 text-sm align-top ml-1">.</span>
+                              </h1>
+                            </div>
+
+                            <div className="flex items-center gap-3 sm:gap-6">
+                              <Button variant="gemini" className="hidden sm:flex gap-3 items-center pl-5 pr-6"
+                                onClick={handleAiRecommendation}>
+                                <Crown className="w-4 h-4 text-black" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-black">Concierge
+                                  AI</span>
+                              </Button>
+                              {/* Mobile AI Icon */}
+                              <button onClick={handleAiRecommendation} className="sm:hidden text-amber-500 p-2">
+                                <Crown className="w-6 h-6" />
+                              </button>
+
+                              <div className="h-6 sm:h-8 w-[1px] bg-white/10 mx-1 sm:mx-2 hidden sm:block"></div>
+
+                              <Button onClick={()=> { resetAddForm(); setIsAddOpen(true); }} variant="primary">
+                                <Plus className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Add Title</span>
+                              </Button>
+                            </div>
+                          </div>
+                        </header>
+
+                        {/* Main Content */}
+                        <main className="px-4 sm:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+
+                          {/* Dashboard Stats */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                            {[
+                            { label: "Total Playtime", value: totalHours, unit: "HRS", color: "text-zinc-200" },
+                            { label: "Completed", value: finishedCount, unit: "TITLES", color: "text-zinc-200" },
+                            { label: "Collection Size", value: games.length, unit: "ITEMS", color: "text-zinc-200" }
+                            ].map((stat, i) => (
+                            <div key={i} className="group relative p-6 sm:p-8">
+                              <div
+                                className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent rounded-[2rem] border border-white/[0.05] group-hover:border-white/10 transition-colors" />
+                              <div className="relative z-10">
+                                <p
+                                  className="text-[10px] font-bold text-amber-500/80 uppercase tracking-[0.2em] mb-3 sm:mb-4">
+                                  {stat.label}</p>
+                                <div className="flex items-baseline gap-2">
+                                  <span className={`text-4xl md:text-5xl lg:text-6xl font-light tracking-tighter
+                                    ${stat.color}`}>{stat.value}</span>
+                                  <span className="text-xs font-medium text-zinc-600 tracking-widest">{stat.unit}</span>
+                                </div>
+                              </div>
+                            </div>
+                            ))}
+                          </div>
+
+                          {/* Filters Bar */}
+                          <div
+                            className="flex flex-col xl:flex-row gap-6 sm:gap-8 items-end justify-between border-t border-white/5 pt-8 sm:pt-10">
+                            {/* Search Input */}
+                            <div className="relative w-full max-w-md group">
+                              <Search
+                                className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-600 h-5 w-5 group-focus-within:text-amber-500 transition-colors" />
+                              <input placeholder="SEARCH COLLECTION" value={search} onChange={(e)=>
+                              setSearch(e.target.value)}
+                              className="w-full h-12 pl-12 bg-transparent border-b border-white/10
+                              focus:border-amber-500/50 focus:outline-none text-lg sm:text-xl font-light text-white
+                              placeholder:text-zinc-700 tracking-widest uppercase transition-all"
+                              />
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
+                              <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide flex-1 xl:flex-none">
+                                {(["Todos", "Playing", "Backlog"] as const).map((label) => (
+                                <button key={label} onClick={()=> setStatusFilter(label === "Playing" ? "Jogando" :
+                                  label === "Backlog" ? "Backlog" : "Todos")}
+                                  className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-[9px] sm:text-[10px] font-bold
+                                  uppercase tracking-widest transition-all ${
+                                  (statusFilter === label || (label === "Playing" && statusFilter === "Jogando"))
+                                  ? "bg-white text-black"
+                                  : "bg-transparent text-zinc-500 hover:text-white border border-white/10"
+                                  }`}
+                                  >
+                                  {label}
+                                </button>
+                                ))}
+                              </div>
+
+                              <div className="flex gap-2">
+                                <button onClick={()=> setViewMode('list')}
+                                  className={`p-2 sm:p-3 rounded-full border transition-all ${viewMode === 'list' ?
+                                  'bg-white text-black border-white' : 'border-white/10 text-zinc-600
+                                  hover:text-white'}`}
+                                  >
+                                  <List className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                                <button onClick={()=> setViewMode('grid')}
+                                  className={`p-2 sm:p-3 rounded-full border transition-all ${viewMode === 'grid' ?
+                                  'bg-white text-black border-white' : 'border-white/10 text-zinc-600
+                                  hover:text-white'}`}
+                                  >
+                                  <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Game Grid */}
+                          <div className="min-h-[400px]">
+                            {filteredGames.length > 0 ? (
+                            <div className={`grid gap-6 ${viewMode==='grid'
+                              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                              : 'grid-cols-1' }`}>
+                              {filteredGames.map(game => (
+                              <GameCard key={game.id} game={game} onClick={()=> setSelectedGame(game)}
+                                viewMode={viewMode}
+                                />
+                                ))}
+                            </div>
+                            ) : (
+                            <div className="flex flex-col items-center justify-center py-32 text-center opacity-30">
+                              <div className="h-px w-24 bg-white mb-8" />
+                              <p className="font-light text-2xl text-white tracking-[0.3em] uppercase">No Records</p>
+                              <p className="text-sm mt-2 text-zinc-500">Your vault awaits its first treasure.</p>
+                            </div>
+                            )}
+                          </div>
+                        </main>
+                      </div>
+
+                      {/* Add Game Modal */}
+                      <Modal isOpen={isAddOpen} onClose={()=> setIsAddOpen(false)} title="Acquire New Title">
+                        <form onSubmit={handleAddGame} className="space-y-8 mt-4">
+                          <div className="flex gap-4 items-end">
+                            <Input name="title" label="Title Identification" required value={addFormTitle} onChange={(e:
+                              any)=> setAddFormTitle(e.target.value)}
+                            className="text-lg font-light tracking-wide"
+                            />
+                            <Button type="button" variant="gemini" className="mb-1 rounded-lg px-3 h-9"
+                              loading={isAutoFillLoading} onClick={handleAiAutoFill}>
+                              <Sparkles className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-6 sm:gap-8">
+                            <Select name="platform" label="Platform" value={addFormPlatform} onChange={(e: any)=>
+                              setAddFormPlatform(e.target.value)}
+                              options={PLATFORMS.map(p => ({ label: p, value: p }))}
+                              />
+                              <Select name="status" label="Collection Status" options={[ { label: "Backlog" ,
+                                value: "backlog" }, { label: "Currently Playing" , value: "playing" }, {
+                                label: "Completed" , value: "finished" }, { label: "Archived" , value: "dropped" },
+                                ]} />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-6 sm:gap-8">
+                            <Input name="hours" label="Hours Logged" type="number" value={addFormHours} onChange={(e:
+                              any)=> setAddFormHours(e.target.value)}
+                            />
+                            <Input name="rating" label="Rating (0-5)" type="number" min="0" max="5" />
+                          </div>
+
+                          <div className="space-y-4 pt-4">
+                            <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Personal
+                                Notes</label>
+                              {addFormTags.length > 0 && (
+                              <div className="flex gap-2">
+                                {addFormTags.slice(0, 3).map(tag => (
+                                <span key={tag}
+                                  className="text-[9px] uppercase tracking-wider text-amber-500">{tag}</span>
+                                ))}
+                              </div>
+                              )}
+                            </div>
+                            <textarea name="notes"
+                              className="w-full bg-transparent text-sm text-zinc-300 focus:outline-none min-h-[100px] resize-none leading-relaxed font-light"
+                              placeholder="Record your thoughts..." value={addFormNotes} onChange={(e: any)=> setAddFormNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="pt-8 flex gap-4">
+             <Button type="button" variant="ghost" className="flex-1 border border-zinc-800" onClick={() => setIsAddOpen(false)}>Discard</Button>
+             <Button type="submit" variant="primary" className="flex-[2]">Confirm Acquisition</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* AI Recommendation Modal */}
+      <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title="The Concierge">
+         <div className="space-y-8 py-4">
+            {isAiLoading ? (
+               <div className="flex flex-col items-center justify-center py-12 text-center space-y-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-[40px] animate-pulse"></div>
+                    <Crown className="w-16 h-16 text-amber-500/80 animate-pulse relative z-10" />
+                  </div>
+                  <p className="text-xs font-bold text-amber-500 uppercase tracking-[0.3em]">Curating Selection...</p>
+               </div>
+            ) : (
+               <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="flex items-start gap-4 mb-8">
+                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent mt-3" />
+                     <Crown className="w-5 h-5 text-amber-500 shrink-0" />
+                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent mt-3" />
+                  </div>
+                  
+                  <div className="text-zinc-300 leading-loose font-light tracking-wide whitespace-pre-line text-center">
+                     {aiRecommendation}
+                  </div>
+                  
+                  <div className="pt-10 flex justify-center">
+                    <Button variant="ghost" onClick={() => setIsAiModalOpen(false)} className="border border-white/10 hover:border-white/30">Dismiss</Button>
+                  </div>
+               </div>
+            )}
+         </div>
+      </Modal>
+
+      {/* Edit/Details Modal */}
+      {selectedGame && (
+        <Modal isOpen={!!selectedGame} onClose={() => setSelectedGame(null)} title="Asset Details">
+           <form onSubmit={handleUpdate} className="space-y-8">
+            <div className="flex justify-center -mt-2 mb-6">
+               <div className="w-[60%] aspect-[3/4] bg-zinc-900 rounded-lg overflow-hidden relative shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-white/5 group">
+                  {selectedGame.coverUrl ? (
+                    <>
+                      <img src={selectedGame.coverUrl} className="w-full h-full object-cover opacity-90" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-zinc-800">
+                      <Gamepad2 className="w-12 h-12" />
+                    </div>
+                  )}
+               </div>
+            </div>
+            
+            <div className="text-center mb-8">
+               <h2 className="text-xl sm:text-2xl font-light text-white tracking-widest uppercase mb-2">{selectedGame.title}</h2>
+               <div className="flex justify-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-[0.2em]">
+                 <span>{selectedGame.platform}</span>
+                 <span>•</span>
+                 <span>{new Date(selectedGame.addedAt).getFullYear()}</span>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 border-t border-b border-white/5 py-8">
+              <div className="text-center border-r border-white/5">
+                 <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Status</p>
+                 <div className="inline-flex items-center gap-2">
+                   <div className={`w-1.5 h-1.5 rounded-full ${selectedGame.status === 'playing' ? 'bg-amber-500' : 'bg-zinc-600'}`} />
+                   <span className="text-sm font-light text-zinc-200">{statusLabelMap[selectedGame.status]}</span>
+                 </div>
+              </div>
+              <div className="text-center">
+                 <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Rating</p>
+                 <div className="flex justify-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 ${i < (selectedGame.rating || 0) ? 'fill-white text-white' : 'text-zinc-800'}`} />
+                    ))}
+                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 px-4">
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center mb-4">Field Notes</p>
+              <textarea 
+                name="notes"
+                defaultValue={selectedGame.notes}
+                className="w-full bg-transparent text-sm text-zinc-400 focus:outline-none min-h-[80px] resize-none leading-relaxed font-light text-center"
+              />
+            </div>
+
+            <div className="pt-6 flex gap-4">
+               <Button type="button" variant="danger" className="flex-1 bg-transparent border border-rose-900/30 text-rose-700 hover:bg-rose-950/10" onClick={() => handleDelete(selectedGame.id)}>
+                 Remove Asset
+               </Button>
+               <Button type="submit" variant="primary" className="flex-[2]">
+                 Save Changes
+               </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  )
+}

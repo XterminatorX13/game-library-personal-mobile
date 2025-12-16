@@ -26,10 +26,10 @@ interface GameCardProps {
 };
 
 const STATUS_COLORS: Record<GameStatus, string> = {
-    playing: "bg-primary shadow-primary/50",
-    backlog: "bg-muted-foreground shadow-muted-foreground/50",
-    finished: "bg-green-500 shadow-green-500/50",
-    dropped: "bg-destructive shadow-destructive/50",
+    playing: "status-playing",
+    backlog: "status-backlog",
+    finished: "status-finished",
+    dropped: "status-dropped",
 };
 
 function GameCardComponent({ game, onClick, priority = false, variant = "grid", onQuickAdd }: GameCardProps) {
@@ -127,19 +127,18 @@ function GameCardComponent({ game, onClick, priority = false, variant = "grid", 
 
     // --- GRID & GALLERY VIEW ---
     return (
-        <div className={`transform transition-all duration-200 ${variant === 'gallery' ? 'hover:scale-[1.01]' : 'hover:scale-[1.02] active:scale-95'}`}>
+        <div className="transform transition-all duration-500 hover:-translate-y-1 active:scale-95">
             <Card
                 onClick={onClick}
-                className={`group relative border-none bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-xl cursor-pointer overflow-hidden ${variant === 'gallery' ? 'aspect-video' : 'aspect-[2/3]'}`}
+                className={`card-luxury group relative border-none bg-card/50 backdrop-blur-sm cursor-pointer overflow-hidden rounded-2xl ${variant === 'gallery' ? 'aspect-video' : 'aspect-[2/3]'}`}
             >
                 <CardContent className="p-0 relative h-full">
                     <img
                         alt={game.title}
-                        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${variant === 'gallery' ? 'object-top' : ''}`}
+                        className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${variant === 'gallery' ? 'object-top' : ''}`}
                         src={coverUrl}
                         loading={priority ? "eager" : "lazy"}
                         decoding="async"
-                        // fetchpriority handled by loading prop
                         width={variant === 'gallery' ? 600 : 400}
                         height={variant === 'gallery' ? 338 : 600}
                         style={{

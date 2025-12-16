@@ -154,15 +154,15 @@ export function Search() {
     return (
         <div className="min-h-screen bg-background pb-16 md:pb-0">
             {/* Header with Glassmorphism */}
-            <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 pt-safe">
+            <header className="sticky top-0 z-40 fade-header pt-safe">
                 <div className="container mx-auto px-4 h-14 flex items-center gap-3">
                     <Link to="/">
-                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-white/5">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
-                    <h1 className="text-lg font-semibold">
-                        Buscar <span className="text-primary">Jogos</span>
+                    <h1 className="text-lg font-light tracking-wide">
+                        Buscar <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-400">Jogos</span>
                     </h1>
                 </div>
             </header>

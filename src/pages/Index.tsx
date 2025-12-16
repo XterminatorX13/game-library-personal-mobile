@@ -158,11 +158,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
-      {/* Header - Clean & Minimal */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md pt-safe">
+      {/* Header - Luxury Minimal */}
+      <header className="sticky top-0 z-40 fade-header pt-safe">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">
-            Game<span className="text-primary">Vault</span>
+          <h1 className="text-xl sm:text-2xl font-light tracking-[0.1em] text-white">
+            GAME<span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">VAULT</span>
+            <span className="text-amber-500 text-xs align-top ml-0.5">.</span>
           </h1>
 
           {/* Desktop Navigation & Add Game Button */}

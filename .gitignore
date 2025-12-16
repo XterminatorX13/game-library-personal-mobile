@@ -25,3 +25,6 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# Reference code (not our project)
+HLTB PLAYNITE/

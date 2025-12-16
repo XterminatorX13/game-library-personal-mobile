@@ -1,40 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   GameVault: Cinematic Luxury Design System
+   "Mais do que uma biblioteca, uma galeria de arte digital."
+   ═══════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Void Black - Pure depth */
+    --background: 0 0% 2%;
+    --foreground: 240 5% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Obsidian surfaces */
+    --card: 0 0% 4%;
+    --card-foreground: 240 5% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 240 5% 96%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Platinum - Primary actions */
+    --primary: 240 5% 96%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Dark zinc - Secondary */
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 240 5% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted - Labels */
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 50%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent - Hover states */
+    --accent: 240 4% 12%;
+    --accent-foreground: 240 5% 96%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive - Danger */
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Borders - Subtle white lines */
+    --border: 240 4% 16%;
+    --input: 240 4% 12%;
+    --ring: 38 92% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Royal Amber - Gold accent (custom) */
+    --amber: 38 92% 50%;
+    --amber-glow: 0 0 20px rgba(245, 158, 11, 0.3);
   }
 }
 
@@ -44,29 +61,285 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Selection - Gold highlight */
+  ::selection {
+    @apply bg-amber-500/30 text-amber-100;
   }
 }
 
-/* Custom Scrollbar */
+/* ═══════════════════════════════════════════════════════════════
+   Luxury Animations
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes shimmer-bg {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Noise Texture Overlay - Adds depth, avoids "plastic" look
+   ═══════════════════════════════════════════════════════════════ */
+
+.luxury-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Ambient Light Blobs - Cinematic depth
+   ═══════════════════════════════════════════════════════════════ */
+
+.ambient-gold {
+  position: fixed;
+  width: 40vw;
+  height: 40vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ambient-indigo {
+  position: fixed;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Button Shimmer Effect - "Lingote"
+   ═══════════════════════════════════════════════════════════════ */
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: translateX(-100%) skewX(-12deg);
+  transition: transform 0.7s ease;
+}
+
+.btn-shimmer:hover::before {
+  transform: translateX(100%) skewX(-12deg);
+}
+
+/* Gold shimmer variant */
+.btn-shimmer-gold::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(245, 158, 11, 0.3),
+    transparent
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Card Hover Effects - "Monólito"
+   ═══════════════════════════════════════════════════════════════ */
+
+.card-luxury {
+  @apply relative overflow-hidden transition-all duration-500;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card-luxury:hover {
+  border-color: rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 30px -10px rgba(245, 158, 11, 0.15);
+}
+
+.card-luxury img {
+  @apply transition-all duration-700;
+  filter: brightness(0.7) saturate(0.9);
+}
+
+.card-luxury:hover img {
+  @apply scale-105;
+  filter: brightness(1) saturate(1);
+}
+
+/* Info reveal on hover */
+.card-luxury .card-info {
+  @apply opacity-0 translate-y-2 transition-all duration-300;
+}
+
+.card-luxury:hover .card-info {
+  @apply opacity-100 translate-y-0;
+}
+
+/* Title float effect */
+.card-luxury .card-title {
+  @apply transition-transform duration-500;
+}
+
+.card-luxury:hover .card-title {
+  @apply -translate-y-1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Glassmorphism - "Vidro"
+   ═══════════════════════════════════════════════════════════════ */
+
+.glass {
+  @apply backdrop-blur-xl bg-black/80 border border-white/10;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+.glass-subtle {
+  @apply backdrop-blur-md bg-black/60 border border-white/5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Typography - Editorial Look (compact)
+   ═══════════════════════════════════════════════════════════════ */
+
+.label-luxury {
+  @apply text-[9px] font-bold uppercase tracking-[0.15em] text-zinc-500;
+}
+
+.number-hero {
+  @apply text-3xl font-light tracking-tight text-zinc-200;
+}
+
+.title-elegant {
+  @apply font-light tracking-wide;
+}
+
+/* Gold text gradient */
+.text-gold-gradient {
+  background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Status Indicators - Elegant dots
+   ═══════════════════════════════════════════════════════════════ */
+
+.status-playing {
+  @apply bg-amber-500;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.status-finished {
+  @apply bg-emerald-500;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dropped {
+  @apply bg-rose-500;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+}
+
+.status-backlog {
+  @apply bg-zinc-600;
+}
+
+/* Pulsing indicator for "playing" */
+.status-pulse {
+  @apply relative;
+}
+
+.status-pulse::before {
+  content: '';
+  @apply absolute inset-0 rounded-full bg-amber-400;
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Skeleton Loading - Premium shimmer
+   ═══════════════════════════════════════════════════════════════ */
+
+.skeleton-shimmer {
+  animation: shimmer-bg 2s infinite linear, pulse-subtle 2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.6) 20%,
+    rgba(245, 158, 11, 0.05) 40%,
+    hsl(var(--muted) / 0.6) 60%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Scrollbar - Minimal & elegant
+   ═══════════════════════════════════════════════════════════════ */
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
+  background: rgba(245, 158, 11, 0.3);
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -78,36 +351,56 @@
   scrollbar-width: none;
 }
 
-/* Shimmer Animation for Skeleton Loading */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
+/* ═══════════════════════════════════════════════════════════════
+   Toast Animations
+   ═══════════════════════════════════════════════════════════════ */
 
-  100% {
-    background-position: 1000px 0;
-  }
+.toast-enter {
+  animation: slideIn 0.3s ease-out;
 }
 
-@keyframes pulse-subtle {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
+.toast-exit {
+  animation: fadeIn 0.2s ease-in reverse;
 }
 
-.skeleton-shimmer {
-  animation: shimmer 2s infinite linear, pulse-subtle 2s ease-in-out infinite;
-  background: linear-gradient(90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted) / 0.8) 20%,
-      hsl(var(--primary) / 0.1) 40%,
-      hsl(var(--muted) / 0.8) 60%,
-      hsl(var(--muted)) 100%);
-  background-size: 1000px 100%;
+/* ═══════════════════════════════════════════════════════════════
+   Utility Classes
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Glow effects */
+.glow-gold {
+  box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.3);
+}
+
+.glow-gold-hover:hover {
+  box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.5);
+}
+
+/* Border glow on hover */
+.border-glow:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Fade on scroll (for headers) */
+.fade-header {
+  @apply backdrop-blur-xl bg-background/80 border-b border-white/5;
+}
+
+/* Focus ring - gold */
+.focus-gold:focus {
+  @apply outline-none ring-1 ring-amber-500/30;
+}
+
+/* Hover lift effect */
+.hover-lift {
+  @apply transition-transform duration-300;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-1;
+}
+
+/* Scale on active */
+.active-scale:active {
+  @apply scale-95;
 }

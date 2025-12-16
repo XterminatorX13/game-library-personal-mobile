@@ -178,11 +178,11 @@ const Collections = () => {
 
     return (
         <div className="min-h-screen bg-background pb-16 md:pb-0">
-            <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md pt-safe">
+            <header className="sticky top-0 z-40 fade-header pt-safe">
                 <div className="container mx-auto px-4 py-4 space-y-4">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                            {t('collections.title')} <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">{t('collections.titleHighlight')}</span>
+                        <h1 className="text-xl md:text-2xl font-light tracking-wide text-white">
+                            {t('collections.title')} <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">{t('collections.titleHighlight')}</span>
                         </h1>
 
                         <div className="flex items-center gap-4">
