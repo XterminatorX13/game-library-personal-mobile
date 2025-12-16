@@ -287,19 +287,16 @@ export function GameDetailsDialog({ game, open, onOpenChange, onUpdateGame, onDe
                         </div>
                     )}
 
-                    {/* Metacritic & RAWG Playtime (fallback for HLTB) */}
-                    {(activeGame.metacritic || activeGame.rawgPlaytime) && (
+                    {/* Metacritic (only show if score > 0) */}
+                    {(activeGame.metacritic && activeGame.metacritic > 0) && (
                         <div className="grid grid-cols-2 gap-3">
-                            {activeGame.metacritic && (
-                                <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
-                                    <Award className="h-5 w-5 text-green-500" />
-                                    <div>
-                                        <div className="text-lg font-bold text-foreground">{activeGame.metacritic}</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.metacritic')}</div>
-                                    </div>
+                            <div className="bg-muted/50 rounded-lg p-3 flex items-center gap-3">
+                                <Award className="h-5 w-5 text-green-500" />
+                                <div>
+                                    <div className="text-lg font-bold text-foreground">{activeGame.metacritic}</div>
+                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{t('gameDetails.metacritic')}</div>
                                 </div>
-                            )}
-
+                            </div>
                         </div>
                     )}
 
