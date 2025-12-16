@@ -29,22 +29,14 @@ const AppRoutes = () => {
 
   return (
     <>
-      {/* Ambient light effects - subtle background (hidden on mobile for perf) */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
-        <div className="ambient-gold top-[-15%] right-[10%] opacity-40" />
-        <div className="ambient-indigo bottom-[-10%] left-[-5%] opacity-30" />
-      </div>
-
-      <div className="relative z-10">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/add" element={<Index />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/add" element={<Index />} />
+        <Route path="/collections" element={<Collections />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       <Toaster />
     </>
   );

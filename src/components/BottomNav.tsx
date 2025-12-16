@@ -19,7 +19,7 @@ export function BottomNav({ onAddGame }: { onAddGame: (game: any) => void }) {
     const [isAddOpen, setIsAddOpen] = useState(false);
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-zinc-950 md:hidden">
             {/* Safe area for iOS */}
             <div className="pb-safe">
                 <div className="grid grid-cols-5 h-14 items-center">
