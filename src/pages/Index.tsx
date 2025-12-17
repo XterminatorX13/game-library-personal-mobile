@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, Game } from "@/db";
-import { Search, LayoutGrid, List } from "lucide-react";
+import { Search, LayoutGrid, List, Maximize2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,7 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 type Platform = string;
 type StatusFilter = "Todos" | "Backlog" | "Jogando" | "Zerado" | "Dropado";
 type GameStatus = Game['status']; // Extract from imported Game type
-type ViewMode = "grid" | "list";
+type ViewMode = "grid" | "list" | "gallery";
 
 
 const statusLabelMap: Record<GameStatus, StatusFilter> = {
@@ -236,7 +236,7 @@ const Index = () => {
               />
             </div>
 
-            {/* View Switcher - Grid/List Only */}
+            {/* View Switcher - Grid/List/Gallery */}
             <div className="flex items-center gap-2">
               <div className="flex items-center bg-muted/50 rounded-lg p-0.5 md:p-1 border border-border">
                 <Button
@@ -256,6 +256,15 @@ const Index = () => {
                   title="Grid View"
                 >
                   <LayoutGrid className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "gallery" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-7 w-7 md:h-8 md:w-8"
+                  onClick={() => setViewMode("gallery")}
+                  title="Gallery View (Full Size)"
+                >
+                  <Maximize2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
               </div>
             </div>
